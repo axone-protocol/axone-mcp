@@ -1,0 +1,40 @@
+name: Test
+
+on:
+  workflow_call:
+
+  push:
+    branches: [main]
+
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-go:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go environment
+        uses: actions/setup-go@v5.0.0
+        with:
+          go-version: "1.21"
+
+      - name: Test go project
+        run: |
+          make test-go
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v5
+        if: github.actor != 'dependabot[bot]'
+        with:
+          files: ./target/coverage.txt
+          env_vars: OS,GOLANG
+          fail_ci_if_error: false
+          verbose: true
+          token: ${{ secrets.CODECOV_TOKEN }}
