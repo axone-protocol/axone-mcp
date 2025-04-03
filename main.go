@@ -1,6 +1,6 @@
 package main
 
-import "axone-protocol/template-go/cmd"
+import "axone-protocol/axone-mcp/cmd"
 
 func main() {
 	cmd.Execute()

@@ -1,4 +1,4 @@
-module axone-protocol/template-go
+module axone-protocol/axone-mcp
 
 go 1.21
 

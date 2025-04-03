@@ -1,43 +1,48 @@
-# Golang Template
+# axone-mcp
 
-> Template for golang projects @axone-protocol.
+> 🤖 [Axone](https://axone.xyz)’s [MCP](https://modelcontextprotocol.io/introduction) server – gateway to the dataverse for AI-powered tools
 
-[![version](https://img.shields.io/github/v/release/axone-protocol/template-go?style=for-the-badge&logo=github)](https://github.com/axone-protocol/template-go/releases)
-[![lint](https://img.shields.io/github/actions/workflow/status/axone-protocol/template-go/lint.yml?branch=main&label=lint&style=for-the-badge&logo=github)](https://github.com/axone-protocol/template-go/actions/workflows/lint.yml)
-[![build](https://img.shields.io/github/actions/workflow/status/axone-protocol/template-go/build.yml?branch=main&label=build&style=for-the-badge&logo=github)](https://github.com/axone-protocol/template-go/actions/workflows/build.yml)
-[![test](https://img.shields.io/github/actions/workflow/status/axone-protocol/template-go/test.yml?branch=main&label=test&style=for-the-badge&logo=github)](https://github.com/axone-protocol/template-go/actions/workflows/test.yml)
-[![codecov](https://img.shields.io/codecov/c/github/axone-protocol/template-go?style=for-the-badge&token=6NL9ICGZQS&logo=codecov)](https://codecov.io/gh/axone-protocol/template-go)
+[![version](https://img.shields.io/github/v/release/axone-protocol/axone-mcp?style=for-the-badge&logo=github)](https://github.com/axone-protocol/axone-mcp/releases)
+[![lint](https://img.shields.io/github/actions/workflow/status/axone-protocol/axone-mcp/lint.yml?branch=main&label=lint&style=for-the-badge&logo=github)](https://github.com/axone-protocol/axone-mcp/actions/workflows/lint.yml)
+[![build](https://img.shields.io/github/actions/workflow/status/axone-protocol/axone-mcp/build.yml?branch=main&label=build&style=for-the-badge&logo=github)](https://github.com/axone-protocol/axone-mcp/actions/workflows/build.yml)
+[![test](https://img.shields.io/github/actions/workflow/status/axone-protocol/axone-mcp/test.yml?branch=main&label=test&style=for-the-badge&logo=github)](https://github.com/axone-protocol/axone-mcp/actions/workflows/test.yml)
+[![codecov](https://img.shields.io/codecov/c/github/axone-protocol/axone-mcp?style=for-the-badge&token=6NL9ICGZQS&logo=codecov)](https://codecov.io/gh/axone-protocol/axone-mcp)
 [![conventional commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg?style=for-the-badge&logo=conventionalcommits)](https://conventionalcommits.org)
 [![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg?style=for-the-badge)](https://github.com/semantic-release/semantic-release)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg?style=for-the-badge)](https://github.com/axone-protocol/.github/blob/main/CODE_OF_CONDUCT.md)
 [![License](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg?style=for-the-badge)](https://opensource.org/licenses/BSD-3-Clause)
 
-## Purpose & Philosophy
+## Axone’s MCP server
 
-This repository holds the template for building Golang projects with a consistent set of standards accros all [Axone](https://github.com/axone-protocol) projects. We are convinced that the quality of the code depends on clear and consistent coding conventions, with an automated enforcement (CI).
+[Axone](https://axone.xyz)’s [MCP](https://modelcontextprotocol.io/introduction) server is a lightweight implementation that
+exposes Axone’s capabilities through the standardized Model-Context Protocol. It includes an authorization layer to ensure
+that access requests comply with the decentralized governance rules established on-chain.
 
-This way, the template promotes:
+```mermaid
+flowchart LR
+    classDef actor stroke:#808
+    classDef system stroke:#0ff
+    classDef resource stroke:#f00
 
-- the use of [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/), [semantic versioning](https://semver.org/) and [semantic releasing](https://github.com/cycjimmy/semantic-release-action) which automates the whole package release workflow including: determining the next version number, generating the release notes, and publishing the artifacts (project tarball, docker images, etc.)
-- unit testing
-- linting via [golangci-lint](https://github.com/golangci/golangci-lint)
-- a uniformed way of building the project for several platforms via a Makefile using a docker image
+    actor:::actor@{ shape: stadium, label: "Host with MCP Client<br>(Claude, IDEs, Tools)" }
+    s3Proxy:::system@{ shape: rounded, label: "Axone<br>MCP server" }
+    s3:::resource@{shape: lin-cyl, label: "Resources<br>server"}
+    files@{ shape: docs, label: "resources" }
+    axone:::system@{ shape: das, label: "🔗 Axone chain" }
+    s3 --> files
 
-## How to use
+    actor -- access --> s3Proxy
 
-> 🚨 do not fork this repository as it is a [template repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template)
+    s3Proxy ~~~
 
-1. Click on [Use this template](https://github.com/axone-protocol/template-go/generate)
-2. Give a name to your project
-3. Wait until the first run of CI finishes
-4. Clone your new project and happy coding!
+    s3Proxy -. ① 🛡️ check .-> axone
+    s3Proxy -. ② ✅ access .-> s3
+```
 
-## Prerequisites
+## Build
 
 - Be sure you have [Golang](https://go.dev/doc/install) installed.
 - [Docker](https://docs.docker.com/engine/install/) as well if you want to use the Makefile.
-
-## Build
 
 ```sh
 make build

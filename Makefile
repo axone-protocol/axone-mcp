@@ -27,7 +27,7 @@ COLOR_WHITE  = $(call get_color,setaf,7)
 COLOR_YELLOW = $(call get_color,setaf,3)
 
 # Application
-BINARY_NAME   = template-go
+BINARY_NAME   = axone-mcp
 BINARY_AMD64  = $(BINARY_NAME).amd64
 $(info 🐚 ${COLOR_GREEN}Fetching ${COLOR_CYAN}version${COLOR_RESET} from ${COLOR_YELLOW}git${COLOR_RESET}...)
 VERSION       = $(shell cat version)
@@ -52,9 +52,9 @@ build_tags_comma_sep := $(subst $(whitespace),$(comma),$(build_tags))
 
 # Flags
 LD_FLAGS  = \
-	-X axone-protocol/template-go/internal/version.Name=$(BINARY_NAME) \
-	-X axone-protocol/template-go/internal/version.Version=$(VERSION)  \
-	-X axone-protocol/template-go/internal/version.Commit=$(COMMIT)
+	-X axone-protocol/axone-mcp/internal/version.Name=$(BINARY_NAME) \
+	-X axone-protocol/axone-mcp/internal/version.Version=$(VERSION)  \
+	-X axone-protocol/axone-mcp/internal/version.Commit=$(COMMIT)
 BUILD_FLAGS := -ldflags '$(LD_FLAGS)'
 GO_BUILD := CGO_ENABLED=0 go build $(BUILD_FLAGS)
 
