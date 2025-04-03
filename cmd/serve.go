@@ -38,10 +38,7 @@ var serveSseCmd = &cobra.Command{
 	Use:   "serve-sse",
 	Short: "Start the MCP server (SSE)",
 	RunE: func(_ *cobra.Command, _ []string) error {
-		log.Logger.Info().
-			Str("transport", "sse").
-			Str("base_url", baseURL).
-			Str("addr", listenAddr).Msg("starting server")
+		log.Logger.Info().Msg("starting server")
 
 		s, err := mcp.NewServer()
 		if err != nil {
@@ -57,6 +54,13 @@ var serveSseCmd = &cobra.Command{
 		}
 
 		go func() {
+			log.Logger.Info().
+				Str("transport", "sse").
+				Str("base_url", baseURL).
+				Str("addr", listenAddr).
+				Str("message_path", sseServer.CompleteMessagePath()).
+				Str("sse_path", sseServer.CompleteSsePath()).
+				Msg("listening for connections")
 			if err := httpSrv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 				log.Fatal().Err(err).Msg("failed to start server")
 			}
