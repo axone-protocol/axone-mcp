@@ -198,7 +198,7 @@ $(ENVIRONMENTS_TARGETS):
 # Prints a message with color
 # $(call echo_msg, <emoji>, <action>, <object>, <context>)
 define echo_msg
-	echo "$(strip $(1)) ${COLOR_GREEN}$(strip $(2))${COLOR_RESET} ${COLOR_CYAN}$(strip $(3))${COLOR_RESET} $(strip $(4))"
+	echo "$(strip $(1)) ${COLOR_GREEN}$(strip $(2))${COLOR_RESET} ${COLOR_CYAN}$(strip $(3))${COLOR_RESET} $(strip $(4))${COLOR_RESET}"
 endef
 
 # Build go executable
