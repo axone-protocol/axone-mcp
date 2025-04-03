@@ -26,7 +26,7 @@ const (
 )
 
 const (
-    ReadHeaderTimeout = 5 * time.Second
+	ReadHeaderTimeout = 5 * time.Second
 )
 
 var (
@@ -39,7 +39,7 @@ var serveSseCmd = &cobra.Command{
 	Short: "Start the MCP server (SSE)",
 	RunE: func(_ *cobra.Command, _ []string) error {
 		log.Logger.Info().
-            Str("transport", "sse").
+			Str("transport", "sse").
 			Str("base_url", baseURL).
 			Str("addr", listenAddr).Msg("starting server")
 
@@ -78,7 +78,7 @@ func loggerChain() alice.Chain {
 	return alice.New(hlog.NewHandler(log.Logger),
 		hlog.AccessHandler(func(r *http.Request, status, size int, duration time.Duration) {
 			zerolog.Ctx(r.Context()).
-				Info().
+				Debug().
 				Str("client", r.RemoteAddr).
 				Str("method", r.Method).
 				Stringer("path", r.URL).

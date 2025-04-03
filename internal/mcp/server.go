@@ -9,16 +9,18 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
+	"github.com/rs/zerolog/log"
 )
 
 const (
-	MCPServerName = "Axone MCP Server"
+	ServerName = "Axone MCP Server"
 )
 
 func NewServer() (*server.MCPServer, error) {
 	s := server.NewMCPServer(
-		MCPServerName,
+		ServerName,
 		version.Version,
+		WithLogging(),
 	)
 
 	tool := mcp.NewTool("hello_world",
@@ -32,6 +34,18 @@ func NewServer() (*server.MCPServer, error) {
 	s.AddTool(tool, helloHandler)
 
 	return s, nil
+}
+
+func WithLogging() server.ServerOption {
+	hooks := &server.Hooks{}
+
+	hooks.AddOnRegisterSession(func(_ context.Context, session server.ClientSession) {
+		log.Logger.Info().
+			Str("session_id", session.SessionID()).
+			Msg("Session created")
+	})
+
+	return server.WithHooks(hooks)
 }
 
 func helloHandler(_ context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
