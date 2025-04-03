@@ -1,6 +1,7 @@
 package mcp
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"testing"
@@ -8,10 +9,12 @@ import (
 	goctx "context"
 
 	"github.com/mark3labs/mcp-go/mcp"
+	"github.com/mark3labs/mcp-go/server"
+	"github.com/rs/zerolog/log"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestNewServer(t *testing.T) {
+func TestJSONRCPMessageHandling(t *testing.T) {
 	Convey("Testing JSON-RPC message handling", t, func() {
 		tests := []struct {
 			name     string
@@ -113,3 +116,64 @@ func TestNewServer(t *testing.T) {
 		}
 	})
 }
+
+func TestOnRegisterSessionLog(t *testing.T) {
+	Convey("Given a new MCP server", t, func() {
+		s, err := NewServer()
+		So(err, ShouldBeNil)
+
+		Convey("When RegisterSession is called with a new session", func() {
+			session := fakeSession{
+				sessionID:           "1234",
+				notificationChannel: make(chan mcp.JSONRPCNotification),
+				initialized:         false,
+			}
+			defer close(session.notificationChannel)
+
+			output, err := captureLogOutput(func() error {
+				return s.RegisterSession(goctx.Background(), session)
+			})
+			So(err, ShouldBeNil)
+
+			Convey("Then the session ID and creation message should appear in the logs", func() {
+				So(output, ShouldContainSubstring, "1234")
+				So(output, ShouldContainSubstring, "Session created")
+			})
+		})
+	})
+}
+
+func captureLogOutput(f func() error) (string, error) {
+	var logBuffer bytes.Buffer
+	originalLogger := log.Logger
+	log.Logger = log.Logger.Output(&logBuffer)
+	defer func() { log.Logger = originalLogger }()
+
+	if err := f(); err != nil {
+		return "", err
+	}
+	return logBuffer.String(), nil
+}
+
+type fakeSession struct {
+	sessionID           string
+	notificationChannel chan mcp.JSONRPCNotification
+	initialized         bool
+}
+
+func (f fakeSession) SessionID() string {
+	return f.sessionID
+}
+
+func (f fakeSession) NotificationChannel() chan<- mcp.JSONRPCNotification {
+	return f.notificationChannel
+}
+
+func (f fakeSession) Initialize() {
+}
+
+func (f fakeSession) Initialized() bool {
+	return f.initialized
+}
+
+var _ server.ClientSession = fakeSession{}
