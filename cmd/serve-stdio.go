@@ -10,7 +10,7 @@ import (
 	"strings"
 	"syscall"
 
-	"axone-protocol/axone-mcp/internal/mcp"
+	"github.com/axone-protocol/axone-mcp/internal/mcp"
 
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/rs/zerolog"

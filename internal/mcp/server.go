@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"axone-protocol/axone-mcp/internal/version"
+	"github.com/axone-protocol/axone-mcp/internal/version"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"

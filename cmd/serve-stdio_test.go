@@ -11,9 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"axone-protocol/axone-mcp/internal/version"
-
-	"axone-protocol/axone-mcp/cmd"
+	"github.com/axone-protocol/axone-mcp/cmd"
+	"github.com/axone-protocol/axone-mcp/internal/version"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

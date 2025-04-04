@@ -9,7 +9,7 @@ import (
 	"syscall"
 	"time"
 
-	"axone-protocol/axone-mcp/internal/mcp"
+	"github.com/axone-protocol/axone-mcp/internal/mcp"
 
 	"github.com/justinas/alice"
 

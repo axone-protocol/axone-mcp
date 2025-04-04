@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"strings"
 
-	"axone-protocol/axone-mcp/internal/version"
+	"github.com/axone-protocol/axone-mcp/internal/version"
 
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"

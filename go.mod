@@ -1,4 +1,4 @@
-module axone-protocol/axone-mcp
+module github.com/axone-protocol/axone-mcp
 
 go 1.24
 
