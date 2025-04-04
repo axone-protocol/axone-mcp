@@ -3,8 +3,12 @@ package cmd
 import (
 	"context"
 	"errors"
+	"io"
 	"log"
+	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 
 	"axone-protocol/axone-mcp/internal/mcp"
 
@@ -12,6 +16,12 @@ import (
 	"github.com/rs/zerolog"
 	zlog "github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
+)
+
+var (
+	MCPStdin  io.Reader = os.Stdin
+	MCPStdout io.Writer = os.Stdout
+	MCPStderr io.Writer = os.Stderr
 )
 
 var serveStdioCmd = &cobra.Command{
@@ -29,7 +39,7 @@ This mode is typically used for local integrations and command-line tools that c
 			Str("transport", "stdio").
 			Msg("ready")
 
-		err = server.ServeStdio(s, WithZerolog())
+		err = serveStdio(s, MCPStdin, MCPStdout, MCPStderr, WithZerolog())
 		if err != nil && !errors.Is(err, context.Canceled) {
 			return err
 		}
@@ -50,6 +60,37 @@ func WithZerolog() server.StdioOption {
 	stdLogger := log.New(errorWriter, "", 0)
 
 	return server.WithErrorLogger(stdLogger)
+}
+
+// serveStdio creates and starts a StdioServer with the provided MCPServer and I/O streams.
+// It sets up signal handling for graceful shutdown on SIGTERM and SIGINT.
+// Returns an error if the server encounters any issues during operation.
+func serveStdio(
+	srv *server.MCPServer,
+	stdin io.Reader,
+	stdout io.Writer,
+	stderr io.Writer,
+	opts ...server.StdioOption,
+) error {
+	s := server.NewStdioServer(srv)
+	s.SetErrorLogger(log.New(stderr, "", log.LstdFlags))
+
+	for _, opt := range opts {
+		opt(s)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
+
+	go func() {
+		<-sigChan
+		cancel()
+	}()
+
+	return s.Listen(ctx, stdin, stdout)
 }
 
 // logWriter implements io.Writer by writing to a zerolog.Logger.
