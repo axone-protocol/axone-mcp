@@ -39,6 +39,44 @@ flowchart LR
     s3Proxy -. ② ✅ access .-> s3
 ```
 
+## Usage
+
+Install the MCP server:
+
+```sh
+go install github.com/axone-protocol/axone-mcp@latest
+```
+
+### Usage with [Claude Desktop](https://claude.ai/download)
+
+Add this to your `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "axone-mcp",
+      "args": [
+        "serve",
+        "stdio"
+      ]
+    }
+  }
+}
+```
+
+### Run with SSE transport
+
+```sh
+axone-mcp serve sse --listen-addr localhost:8080
+```
+
+### Run with STDIO transport
+
+```sh
+axone-mcp serve stdio
+```
+
 ## Build
 
 - Be sure you have [Golang](https://go.dev/doc/install) installed.
