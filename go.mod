@@ -5,7 +5,7 @@ go 1.24
 require (
 	github.com/justinas/alice v1.2.0
 	github.com/mark3labs/mcp-go v0.18.0
-	github.com/mattn/go-isatty v0.0.19
+	github.com/mattn/go-isatty v0.0.20
 	github.com/rs/zerolog v1.34.0
 	github.com/smartystreets/goconvey v1.8.1
 	github.com/spf13/cobra v1.9.1
