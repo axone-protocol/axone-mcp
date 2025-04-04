@@ -1,6 +1,6 @@
 package main
 
-import "axone-protocol/axone-mcp/cmd"
+import "github.com/axone-protocol/axone-mcp/cmd"
 
 func main() {
 	cmd.Execute()

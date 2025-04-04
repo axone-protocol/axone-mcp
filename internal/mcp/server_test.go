@@ -137,7 +137,7 @@ func TestOnRegisterSessionLog(t *testing.T) {
 
 			Convey("Then the session ID and creation message should appear in the logs", func() {
 				So(output, ShouldContainSubstring, "1234")
-				So(output, ShouldContainSubstring, "Session created")
+				So(output, ShouldContainSubstring, "session created")
 			})
 		})
 	})

@@ -52,9 +52,9 @@ build_tags_comma_sep := $(subst $(whitespace),$(comma),$(build_tags))
 
 # Flags
 LD_FLAGS  = \
-	-X axone-protocol/axone-mcp/internal/version.Name=$(BINARY_NAME) \
-	-X axone-protocol/axone-mcp/internal/version.Version=$(VERSION)  \
-	-X axone-protocol/axone-mcp/internal/version.Commit=$(COMMIT)
+	-X github.com/axone-protocol/axone-mcp/internal/version.Name=$(BINARY_NAME) \
+	-X github.com/axone-protocol/axone-mcp/internal/version.Version=$(VERSION)  \
+	-X github.com/axone-protocol/axone-mcp/internal/version.Commit=$(COMMIT)
 BUILD_FLAGS := -ldflags '$(LD_FLAGS)'
 GO_BUILD := CGO_ENABLED=0 go build $(BUILD_FLAGS)
 

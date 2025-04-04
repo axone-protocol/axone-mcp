@@ -25,10 +25,16 @@ var (
 func InstallLogRunE(_ *cobra.Command, _ []string) error {
 	var output io.Writer
 
-	switch format := strings.ToLower(logFormat); {
-	case format == "console" || (format == "auto" && isatty.IsTerminal(os.Stdout.Fd())):
+	switch strings.ToLower(logFormat) {
+	case "auto":
+		if isatty.IsTerminal(os.Stdout.Fd()) {
+			output = zerolog.ConsoleWriter{Out: os.Stderr}
+		} else {
+			output = os.Stderr
+		}
+	case "console":
 		output = zerolog.ConsoleWriter{Out: os.Stderr}
-	case format == "json":
+	case "json":
 		output = os.Stderr
 	default:
 		return fmt.Errorf("unknown log format: %s", logFormat)
