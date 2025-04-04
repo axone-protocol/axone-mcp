@@ -20,7 +20,9 @@ func NewServer() (*server.MCPServer, error) {
 	s := server.NewMCPServer(
 		ServerName,
 		version.Version,
-		WithLogging(),
+		server.WithLogging(),
+		server.WithToolCapabilities(false),
+		WithHooksLogging(),
 	)
 
 	tool := mcp.NewTool("hello_world",
@@ -36,13 +38,13 @@ func NewServer() (*server.MCPServer, error) {
 	return s, nil
 }
 
-func WithLogging() server.ServerOption {
+func WithHooksLogging() server.ServerOption {
 	hooks := &server.Hooks{}
 
 	hooks.AddOnRegisterSession(func(_ context.Context, session server.ClientSession) {
 		log.Logger.Info().
 			Str("session_id", session.SessionID()).
-			Msg("Session created")
+			Msg("session created")
 	})
 
 	return server.WithHooks(hooks)
