@@ -2,8 +2,12 @@ package cmd
 
 import (
 	"os"
+	"strings"
 
+	"github.com/axone-protocol/axone-mcp/internal/version"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+	"resenje.org/casbab"
 )
 
 // rootCmd represents the base command when called without any subcommands.
@@ -25,6 +29,10 @@ func Execute() {
 
 func initConfig() {
 	cobra.EnableTraverseRunHooks = true
+
+	viper.SetEnvPrefix(casbab.ScreamingSnake(version.Name))
+	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
+	viper.AutomaticEnv()
 }
 
 func init() {

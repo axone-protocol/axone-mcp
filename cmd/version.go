@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/axone-protocol/axone-mcp/internal/version"
+	"github.com/spf13/viper"
 
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
@@ -54,5 +55,8 @@ func init() {
 	rootCmd.AddCommand(versionCmd)
 
 	versionCmd.Flags().Bool(flagLong, false, "Print long version information")
+	_ = viper.BindPFlag(flagLong, versionCmd.Flags().Lookup(flagLong))
+
 	versionCmd.Flags().StringP(flagOutput, "o", "text", "Output format (text|json)")
+	_ = viper.BindPFlag(flagOutput, versionCmd.Flags().Lookup(flagOutput))
 }
