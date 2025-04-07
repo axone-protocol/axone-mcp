@@ -2,6 +2,7 @@
 
 > 🤖 [Axone](https://axone.xyz)’s [MCP](https://modelcontextprotocol.io/introduction) server – gateway to the dataverse for AI-powered tools
 
+![MCP Protocol](https://img.shields.io/badge/MCP-Compatible-green?style=for-the-badge)
 [![version](https://img.shields.io/github/v/release/axone-protocol/axone-mcp?style=for-the-badge&logo=github)](https://github.com/axone-protocol/axone-mcp/releases)
 [![lint](https://img.shields.io/github/actions/workflow/status/axone-protocol/axone-mcp/lint.yml?branch=main&label=lint&style=for-the-badge&logo=github)](https://github.com/axone-protocol/axone-mcp/actions/workflows/lint.yml)
 [![build](https://img.shields.io/github/actions/workflow/status/axone-protocol/axone-mcp/build.yml?branch=main&label=build&style=for-the-badge&logo=github)](https://github.com/axone-protocol/axone-mcp/actions/workflows/build.yml)
@@ -38,6 +39,10 @@ flowchart LR
     s3Proxy -. ① 🛡️ check .-> axone
     s3Proxy -. ② ✅ access .-> s3
 ```
+
+## Features
+
+
 
 ## Usage
 
