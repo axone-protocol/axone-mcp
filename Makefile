@@ -128,7 +128,7 @@ format-go: tools ## Format Go source code
 .PHONY: mock
 mock: tools ## Generate all the mocks (for tests)
 	@$(call echo_msg, 🧱, Generating, mocks, ...)
-	@$(MOCKGEN_BIN) -destination=internal/mcp/dataverse_mocks_test.go -package=mcp github.com/axone-protocol/axone-sdk/dataverse QueryClient
+	@$(MOCKGEN_BIN) -destination=internal/mcp/dataverse_mocks.go -package=mcp github.com/axone-protocol/axone-sdk/dataverse QueryClient
 
 .PHONY: docker
 docker: build ## Build Docker container

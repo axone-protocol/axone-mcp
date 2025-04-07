@@ -38,8 +38,8 @@ var serveSseCmd = &cobra.Command{
 	Short: "Serve the MCP over SSE (server-sent events)",
 	Long: `Start the MCP server using Server-Sent Events (SSE) to enable streaming over HTTP.
 Typically used for browser-based or reactive clients.`,
-	RunE: func(_ *cobra.Command, _ []string) error {
-		s, err := buildMCPServer()
+	RunE: func(cmd *cobra.Command, _ []string) error {
+		s, err := buildMCPServer(cmd.Context())
 		if err != nil {
 			return err
 		}
@@ -65,13 +65,13 @@ Typically used for browser-based or reactive clients.`,
 			}
 		}()
 
-		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+		ctx, stop := signal.NotifyContext(cmd.Context(), os.Interrupt, syscall.SIGTERM)
 		defer stop()
 
 		<-ctx.Done()
 		log.Info().Msg("shutdown signal received")
 
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		shutdownCtx, cancel := context.WithTimeout(cmd.Context(), 10*time.Second)
 		defer cancel()
 		return sseServer.Shutdown(shutdownCtx)
 	},

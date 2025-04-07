@@ -3,6 +3,7 @@ package cmd_test
 import (
 	"bufio"
 	"bytes"
+	goctx "context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -12,7 +13,9 @@ import (
 	"time"
 
 	"github.com/axone-protocol/axone-mcp/cmd"
+	"github.com/axone-protocol/axone-mcp/internal/mcp"
 	"github.com/axone-protocol/axone-mcp/internal/version"
+	"go.uber.org/mock/gomock"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -34,10 +37,15 @@ func TestServeStdioCommand(t *testing.T) {
 		}
 		for _, tt := range tests {
 			Convey(fmt.Sprintf("Given a new server executed by serve stdio command for %s", tt.name),
-				withCommandArguments([]string{"serve", "stdio"},
+				withCommandArguments([]string{"serve", "stdio", "--dataverse-addr", "whatever"},
 					withPipedIOStreams(func(c C, stdinW io.Writer, stdoutR io.Reader, stderrR io.Reader) {
 						go func() {
-							cmd.Execute()
+							ctrl := gomock.NewController(t)
+							c.Reset(ctrl.Finish)
+
+							dqc := mcp.NewMockQueryClient(ctrl)
+							ctx := cmd.WithDataverseClient(goctx.Background(), dqc)
+							cmd.Execute(ctx)
 						}()
 
 						Convey(fmt.Sprintf("When sending input: %s", tt.input),

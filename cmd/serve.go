@@ -65,22 +65,40 @@ func init() {
 	serveCmd.MarkFlagsMutuallyExclusive(FlagGrpcNoTLS, FlagGrpcTLSSkipVerify)
 }
 
-func buildMCPServer() (*server.MCPServer, error) {
-	dvq, err := buildDataverseClient()
-	if err != nil {
-		return nil, err
-	}
+type contextKey string
 
-	return mcp.NewServer(dvq)
+const dataverseQueryClientKey contextKey = "dataverseQueryClient"
+
+// WithDataverseClient injects a dataverse client into context.
+func WithDataverseClient(ctx context.Context, client dataverse.QueryClient) context.Context {
+	return context.WithValue(ctx, dataverseQueryClientKey, client)
 }
 
-func buildDataverseClient() (dataverse.QueryClient, error) {
-	ctx, cancelFn := context.WithTimeout(context.Background(), viper.GetDuration(FlagGrpcTimeout))
-	defer cancelFn()
+// buildMCPServer creates a new MCP server using the dataverse client from context, or builds a new one.
+func buildMCPServer(ctx context.Context) (*server.MCPServer, error) {
+	client, ok := ctx.Value(dataverseQueryClientKey).(dataverse.QueryClient)
+	if !ok {
+		var err error
+		client, err = buildDataverseClient(ctx)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return mcp.NewServer(client)
+}
+
+// buildDataverseClient fetches a new dataverse client using configuration.
+func buildDataverseClient(ctx context.Context) (dataverse.QueryClient, error) {
+	ctx, cancel := context.WithTimeout(ctx, viper.GetDuration(FlagGrpcTimeout))
+	defer cancel()
 
 	return dataverse.NewQueryClient(
-		ctx, viper.GetString(FlagNodeGrpc), viper.GetString(FlagDataverseAddr),
-		grpc.WithTransportCredentials(getTransportCredentials()))
+		ctx,
+		viper.GetString(FlagNodeGrpc),
+		viper.GetString(FlagDataverseAddr),
+		grpc.WithTransportCredentials(getTransportCredentials()),
+	)
 }
 
 func getTransportCredentials() grpccreds.TransportCredentials {
