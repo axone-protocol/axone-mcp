@@ -106,7 +106,7 @@ func getTransportCredentials() grpccreds.TransportCredentials {
 	case viper.GetBool(FlagGrpcNoTLS):
 		return insecure.NewCredentials()
 	case viper.GetBool(FlagGrpcTLSSkipVerify):
-		return grpccreds.NewTLS(&tls.Config{InsecureSkipVerify: true}) //nolint:gosec
+		return grpccreds.NewTLS(&tls.Config{InsecureSkipVerify: true, MinVersion: tls.VersionTLS12}) //nolint:gosec
 	default:
 		return grpccreds.NewTLS(&tls.Config{MinVersion: tls.VersionTLS12})
 	}
