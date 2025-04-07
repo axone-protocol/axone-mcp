@@ -20,7 +20,7 @@ func getGovernanceCode(dqc dataverse.QueryClient) (tool mcp.Tool, handler server
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 			resourceDID, err := requiredParam[string](request, resourceParam)
 			if err != nil {
-				return mcp.NewToolResultError(err.Error()), nil
+				return nil, err
 			}
 			govDID, err := dqc.GetResourceGovAddr(ctx, resourceDID)
 			if err != nil {
