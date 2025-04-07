@@ -12,6 +12,7 @@ GOFUMPT_VERSION         ?= v0.7.0
 GOLANG_VERSION          ?= 1.23
 GOLANGCI_LINT_VERSION   ?= v2.0.2
 GOTHANKS_VERSION        ?= latest
+MOCKGEN_VERSION         ?= v0.5.0
 TPARSE_VERSION			?= v0.17.0
 
 # Some colors (if supported)
@@ -41,6 +42,7 @@ TOOLS_DIR  = $(TARGET_DIR)/tools
 GOFUMPT_BIN       = $(TOOLS_DIR)/gofumpt/$(GOFUMPT_VERSION)/gofumpt
 GOLANGCI_LINT_BIN = $(TOOLS_DIR)/golangci-lint/$(GOLANGCI_LINT_VERSION)/golangci-lint
 GOTHANKS_BIN      = $(TOOLS_DIR)/gothanks/$(GOTHANKS_VERSION)/gothanks
+MOCKGEN_BIN       = $(TOOLS_DIR)/mockgen/$(MOCKGEN_VERSION)/mockgen
 TPARSE_BIN		  = $(TOOLS_DIR)/tparse/$(TPARSE_VERSION)/tparse
 
 # Build options
@@ -80,7 +82,7 @@ deps: ## Download Go module dependencies
 	@go mod download
 
 .PHONY: tools
-tools: $(GOLANGCI_LINT_BIN) $(GOTHANKS_BIN) $(GOFUMPT_BIN) $(TPARSE_BIN) ## Install necessary development tools
+tools: $(GOLANGCI_LINT_BIN) $(GOTHANKS_BIN) $(GOFUMPT_BIN) $(MOCKGEN_BIN) $(TPARSE_BIN) ## Install necessary development tools
 
 .PHONY: thanks
 thanks: tools ## Thanks to the contributors
@@ -121,6 +123,12 @@ format: format-go ## Format files
 format-go: tools ## Format Go source code
 	@$(call echo_msg, 📐, Formatting, Go source code, ...)
 	@$(GOFUMPT_BIN) -w -l .
+
+## Mock:
+.PHONY: mock
+mock: tools ## Generate all the mocks (for tests)
+	@$(call echo_msg, 🧱, Generating, mocks, ...)
+	@$(MOCKGEN_BIN) -destination=internal/mcp/dataverse_mocks_test.go -package=mcp github.com/axone-protocol/axone-sdk/dataverse QueryClient
 
 .PHONY: docker
 docker: build ## Build Docker container
@@ -176,6 +184,11 @@ $(GOFUMPT_BIN):
 	@$(call echo_msg, 📦, Installing, gofumpt, $(COLOR_YELLOW)$(GOFUMPT_VERSION)$(COLOR_RESET)...)
 	@mkdir -p $(dir $(GOFUMPT_BIN))
 	@GOBIN="$$(cd $(dir $(GOFUMPT_BIN)) && pwd)" go install mvdan.cc/gofumpt@$(GOFUMPT_VERSION)
+
+$(MOCKGEN_BIN):
+	@$(call echo_msg, 📦, Installing, mockgen, $(COLOR_YELLOW)$(MOCKGEN_VERSION)$(COLOR_RESET)...)
+	@mkdir -p $(dir $(MOCKGEN_BIN))
+	@GOBIN="$$(cd $(dir $(MOCKGEN_BIN)) && pwd)" go install go.uber.org/mock/mockgen@$(MOCKGEN_VERSION)
 
 $(TPARSE_BIN):
 	@$(call echo_msg, 📦, Installing, tparse, $(COLOR_YELLOW)$(TPARSE_VERSION)$(COLOR_RESET)...)
