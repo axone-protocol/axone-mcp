@@ -40,9 +40,22 @@ flowchart LR
     s3Proxy -. ② ✅ access .-> s3
 ```
 
-## Features
+## Available tools
 
+### `get_resource_governance_code`
 
+Get the governance code attached to the given resource (if any).
+
+#### Input schema
+
+```json
+{
+  "resource": {
+    "type": "string",
+    "description": "The resource DID to get the governance code for."
+  }
+}
+```
 
 ## Usage
 
