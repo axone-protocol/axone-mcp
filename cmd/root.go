@@ -23,6 +23,10 @@ func Execute() {
 	}
 }
 
-func init() {
+func initConfig() {
 	cobra.EnableTraverseRunHooks = true
+}
+
+func init() {
+	cobra.OnInitialize(initConfig)
 }

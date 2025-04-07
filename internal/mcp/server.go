@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/axone-protocol/axone-mcp/internal/version"
+	"github.com/axone-protocol/axone-sdk/dataverse"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
@@ -16,7 +17,7 @@ const (
 	ServerName = "Axone MCP Server"
 )
 
-func NewServer() (*server.MCPServer, error) {
+func NewServer(dqc dataverse.QueryClient) (*server.MCPServer, error) {
 	s := server.NewMCPServer(
 		ServerName,
 		version.Version,
@@ -34,6 +35,7 @@ func NewServer() (*server.MCPServer, error) {
 	)
 
 	s.AddTool(tool, helloHandler)
+	s.AddTool(getGovernanceCode(dqc))
 
 	return s, nil
 }

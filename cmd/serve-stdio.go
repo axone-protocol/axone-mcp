@@ -10,8 +10,6 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/axone-protocol/axone-mcp/internal/mcp"
-
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/rs/zerolog"
 	zlog "github.com/rs/zerolog/log"
@@ -30,7 +28,7 @@ var serveStdioCmd = &cobra.Command{
 	Long: `Start the MCP server using standard input and output streams.
 This mode is typically used for local integrations and command-line tools that communicate via stdio.`,
 	RunE: func(_ *cobra.Command, _ []string) error {
-		s, err := mcp.NewServer()
+		s, err := buildMCPServer()
 		if err != nil {
 			return err
 		}
