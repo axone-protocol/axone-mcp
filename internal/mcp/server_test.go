@@ -3,6 +3,7 @@ package mcp
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"testing"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/rs/zerolog/log"
 	. "github.com/smartystreets/goconvey/convey"
+	"go.uber.org/mock/gomock"
 )
 
 func TestJSONRCPMessageHandling(t *testing.T) {
@@ -19,6 +21,7 @@ func TestJSONRCPMessageHandling(t *testing.T) {
 		tests := []struct {
 			name     string
 			message  mcp.JSONRPCMessage
+			fixture  func(*MockQueryClient)
 			validate func(response mcp.JSONRPCMessage)
 		}{
 			{
@@ -41,7 +44,7 @@ func TestJSONRCPMessageHandling(t *testing.T) {
 				},
 			},
 			{
-				name: "hello_world tool (ko)",
+				name: "get_resource_governance_code tool",
 				message: mcp.JSONRPCRequest{
 					JSONRPC: mcp.JSONRPC_VERSION,
 					ID:      42,
@@ -49,35 +52,21 @@ func TestJSONRCPMessageHandling(t *testing.T) {
 						Method: "tools/call",
 					},
 					Params: map[string]interface{}{
-						"name": "hello_world",
+						"name": "get_resource_governance_code",
 						"arguments": map[string]interface{}{
-							"name": 666,
+							"resource": "did:key:zQ3shQEmsPLYA43Nu6mAVu2g7otxd7DdEnKoEuWFzU864Bhoj",
 						},
 					},
 				},
-				validate: func(response mcp.JSONRPCMessage) {
-					So(response, ShouldNotBeNil)
-					resp, ok := response.(mcp.JSONRPCError)
-					So(ok, ShouldBeTrue)
-					So(resp.ID, ShouldEqual, 42)
-					So(resp.JSONRPC, ShouldEqual, mcp.JSONRPC_VERSION)
-					So(resp.Error.Message, ShouldEqual, "name must be a string")
-				},
-			},
-			{
-				name: "hello_world tool (ok)",
-				message: mcp.JSONRPCRequest{
-					JSONRPC: mcp.JSONRPC_VERSION,
-					ID:      42,
-					Request: mcp.Request{
-						Method: "tools/call",
-					},
-					Params: map[string]interface{}{
-						"name": "hello_world",
-						"arguments": map[string]interface{}{
-							"name": "test",
-						},
-					},
+				fixture: func(mqc *MockQueryClient) {
+					mqc.EXPECT().
+						GetResourceGovAddr(gomock.Any(), "did:key:zQ3shQEmsPLYA43Nu6mAVu2g7otxd7DdEnKoEuWFzU864Bhoj").
+						Return("axone1maxs84nel7cgyhang9wnmnnh48z27tnggelmsmpxvqvdzpuc4w6stjkd2w", nil).
+						Times(1)
+					mqc.EXPECT().
+						GovCode(gomock.Any(), "axone1maxs84nel7cgyhang9wnmnnh48z27tnggelmsmpxvqvdzpuc4w6stjkd2w").
+						Return("hello(world).", nil).
+						Times(1)
 				},
 				validate: func(response mcp.JSONRPCMessage) {
 					So(response, ShouldNotBeNil)
@@ -91,15 +80,112 @@ func TestJSONRCPMessageHandling(t *testing.T) {
 					So(ctr.Content, ShouldHaveLength, 1)
 					content, ok := ctr.Content[0].(mcp.TextContent)
 					So(ok, ShouldBeTrue)
-					So(content.Text, ShouldEqual, "Hello, test!")
+					So(content.Text, ShouldEqual, "hello(world).")
 					So(content.Type, ShouldEqual, "text")
+				},
+			},
+			{
+				name: "get_resource_governance_code tool - err1",
+				message: mcp.JSONRPCRequest{
+					JSONRPC: mcp.JSONRPC_VERSION,
+					ID:      42,
+					Request: mcp.Request{
+						Method: "tools/call",
+					},
+					Params: map[string]interface{}{
+						"name": "get_resource_governance_code",
+						"arguments": map[string]interface{}{
+							"resource": "did:key:zQ3shQEmsPLYA43Nu6mAVu2g7otxd7DdEnKoEuWFzU864Bhoj",
+						},
+					},
+				},
+				fixture: func(mqc *MockQueryClient) {
+					mqc.EXPECT().
+						GetResourceGovAddr(gomock.Any(), "did:key:zQ3shQEmsPLYA43Nu6mAVu2g7otxd7DdEnKoEuWFzU864Bhoj").
+						Return("", errors.New("err1")).
+						Times(1)
+				},
+				validate: func(response mcp.JSONRPCMessage) {
+					So(response, ShouldNotBeNil)
+					resp, ok := response.(mcp.JSONRPCError)
+					So(ok, ShouldBeTrue)
+					So(resp.ID, ShouldEqual, 42)
+					So(resp.JSONRPC, ShouldEqual, mcp.JSONRPC_VERSION)
+					So(resp.Error, ShouldNotBeNil)
+					So(resp.Error.Message, ShouldEqual, "err1")
+					So(resp.Error.Data, ShouldBeNil)
+				},
+			},
+			{
+				name: "get_resource_governance_code tool - err2",
+				message: mcp.JSONRPCRequest{
+					JSONRPC: mcp.JSONRPC_VERSION,
+					ID:      42,
+					Request: mcp.Request{
+						Method: "tools/call",
+					},
+					Params: map[string]interface{}{
+						"name": "get_resource_governance_code",
+						"arguments": map[string]interface{}{
+							"resource": "did:key:zQ3shQEmsPLYA43Nu6mAVu2g7otxd7DdEnKoEuWFzU864Bhoj",
+						},
+					},
+				},
+				fixture: func(mqc *MockQueryClient) {
+					mqc.EXPECT().
+						GetResourceGovAddr(gomock.Any(), "did:key:zQ3shQEmsPLYA43Nu6mAVu2g7otxd7DdEnKoEuWFzU864Bhoj").
+						Return("axone1maxs84nel7cgyhang9wnmnnh48z27tnggelmsmpxvqvdzpuc4w6stjkd2w", nil).
+						Times(1)
+					mqc.EXPECT().
+						GovCode(gomock.Any(), "axone1maxs84nel7cgyhang9wnmnnh48z27tnggelmsmpxvqvdzpuc4w6stjkd2w").
+						Return("", errors.New("err2")).
+						Times(1)
+				},
+				validate: func(response mcp.JSONRPCMessage) {
+					So(response, ShouldNotBeNil)
+					resp, ok := response.(mcp.JSONRPCError)
+					So(ok, ShouldBeTrue)
+					So(resp.ID, ShouldEqual, 42)
+					So(resp.JSONRPC, ShouldEqual, mcp.JSONRPC_VERSION)
+					So(resp.Error, ShouldNotBeNil)
+					So(resp.Error.Message, ShouldEqual, "err2")
+					So(resp.Error.Data, ShouldBeNil)
+				},
+			},
+			{
+				name: "get_resource_governance_code tool - missing arg",
+				message: mcp.JSONRPCRequest{
+					JSONRPC: mcp.JSONRPC_VERSION,
+					ID:      42,
+					Request: mcp.Request{
+						Method: "tools/call",
+					},
+					Params: map[string]interface{}{
+						"name":      "get_resource_governance_code",
+						"arguments": map[string]interface{}{},
+					},
+				},
+				validate: func(response mcp.JSONRPCMessage) {
+					So(response, ShouldNotBeNil)
+					resp, ok := response.(mcp.JSONRPCError)
+					So(ok, ShouldBeTrue)
+					So(resp.ID, ShouldEqual, 42)
+					So(resp.JSONRPC, ShouldEqual, mcp.JSONRPC_VERSION)
+					So(resp.Error.Message, ShouldEqual, "missing required parameter: resource")
 				},
 			},
 		}
 
 		for _, tt := range tests {
 			Convey(fmt.Sprintf("Given a new server for %s", tt.name), func() {
-				s, err := NewServer()
+				ctrl := gomock.NewController(t)
+				Reset(ctrl.Finish)
+
+				dqc := NewMockQueryClient(ctrl)
+				if tt.fixture != nil {
+					tt.fixture(dqc)
+				}
+				s, err := NewServer(dqc)
 				So(err, ShouldBeNil)
 
 				messageBytes, err := json.Marshal(tt.message)
@@ -119,7 +205,10 @@ func TestJSONRCPMessageHandling(t *testing.T) {
 
 func TestOnRegisterSessionLog(t *testing.T) {
 	Convey("Given a new MCP server", t, func() {
-		s, err := NewServer()
+		ctrl := gomock.NewController(t)
+		Reset(ctrl.Finish)
+
+		s, err := NewServer(NewMockQueryClient(ctrl))
 		So(err, ShouldBeNil)
 
 		Convey("When RegisterSession is called with a new session", func() {

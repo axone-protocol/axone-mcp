@@ -1,7 +1,12 @@
 package main
 
-import "github.com/axone-protocol/axone-mcp/cmd"
+import (
+	"context"
+
+	"github.com/axone-protocol/axone-mcp/cmd"
+)
 
 func main() {
-	cmd.Execute()
+	ctx := context.Background()
+	cmd.Execute(ctx)
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 const (
@@ -17,13 +18,11 @@ const (
 	FlagLogFormat = "log-format"
 )
 
-var (
-	logLevel  string
-	logFormat string
-)
-
 func InstallLogRunE(_ *cobra.Command, _ []string) error {
 	var output io.Writer
+
+	logFormat := viper.GetString(FlagLogFormat)
+	logLevel := viper.GetString(FlagLogLevel)
 
 	switch strings.ToLower(logFormat) {
 	case "auto":
@@ -66,8 +65,10 @@ func InstallLogRunE(_ *cobra.Command, _ []string) error {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVar(&logLevel, FlagLogLevel, "info",
+	rootCmd.PersistentFlags().String(FlagLogLevel, "info",
 		`verbosity of logging ("trace", "debug", "info", "warn", "error")`)
-	rootCmd.PersistentFlags().StringVar(&logFormat, FlagLogFormat, "auto",
+	_ = viper.BindPFlag(FlagLogLevel, rootCmd.PersistentFlags().Lookup(FlagLogLevel))
+	rootCmd.PersistentFlags().String(FlagLogFormat, "auto",
 		`format of logs ("auto", "console", "json")`)
+	_ = viper.BindPFlag(FlagLogFormat, rootCmd.PersistentFlags().Lookup(FlagLogFormat))
 }

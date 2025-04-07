@@ -10,8 +10,6 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/axone-protocol/axone-mcp/internal/mcp"
-
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/rs/zerolog"
 	zlog "github.com/rs/zerolog/log"
@@ -29,8 +27,8 @@ var serveStdioCmd = &cobra.Command{
 	Short: "Serve the MCP over stdio (Standard Input/Output)",
 	Long: `Start the MCP server using standard input and output streams.
 This mode is typically used for local integrations and command-line tools that communicate via stdio.`,
-	RunE: func(_ *cobra.Command, _ []string) error {
-		s, err := mcp.NewServer()
+	RunE: func(cmd *cobra.Command, _ []string) error {
+		s, err := buildMCPServer(cmd.Context())
 		if err != nil {
 			return err
 		}
@@ -39,7 +37,7 @@ This mode is typically used for local integrations and command-line tools that c
 			Str("transport", "stdio").
 			Msg("ready")
 
-		err = serveStdio(s, MCPStdin, MCPStdout, MCPStderr, WithZerolog())
+		err = serveStdio(cmd.Context(), s, MCPStdin, MCPStdout, MCPStderr, WithZerolog())
 		if err != nil && !errors.Is(err, context.Canceled) {
 			return err
 		}
@@ -66,6 +64,7 @@ func WithZerolog() server.StdioOption {
 // It sets up signal handling for graceful shutdown on SIGTERM and SIGINT.
 // Returns an error if the server encounters any issues during operation.
 func serveStdio(
+	ctx context.Context,
 	srv *server.MCPServer,
 	stdin io.Reader,
 	stdout io.Writer,
@@ -79,7 +78,7 @@ func serveStdio(
 		opt(s)
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	sigChan := make(chan os.Signal, 1)

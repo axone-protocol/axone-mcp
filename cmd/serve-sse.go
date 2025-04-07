@@ -9,9 +9,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/axone-protocol/axone-mcp/internal/mcp"
-
 	"github.com/justinas/alice"
+	"github.com/spf13/viper"
 
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/rs/zerolog"
@@ -39,8 +38,8 @@ var serveSseCmd = &cobra.Command{
 	Short: "Serve the MCP over SSE (server-sent events)",
 	Long: `Start the MCP server using Server-Sent Events (SSE) to enable streaming over HTTP.
 Typically used for browser-based or reactive clients.`,
-	RunE: func(_ *cobra.Command, _ []string) error {
-		s, err := mcp.NewServer()
+	RunE: func(cmd *cobra.Command, _ []string) error {
+		s, err := buildMCPServer(cmd.Context())
 		if err != nil {
 			return err
 		}
@@ -66,13 +65,13 @@ Typically used for browser-based or reactive clients.`,
 			}
 		}()
 
-		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+		ctx, stop := signal.NotifyContext(cmd.Context(), os.Interrupt, syscall.SIGTERM)
 		defer stop()
 
 		<-ctx.Done()
 		log.Info().Msg("shutdown signal received")
 
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		shutdownCtx, cancel := context.WithTimeout(cmd.Context(), 10*time.Second)
 		defer cancel()
 		return sseServer.Shutdown(shutdownCtx)
 	},
@@ -96,8 +95,13 @@ func loggerChain() alice.Chain {
 }
 
 func init() {
-	serveSseCmd.PersistentFlags().StringVar(&baseURL, FlagBaseURL, "", "The server's base URL")
-	serveSseCmd.PersistentFlags().StringVar(&listenAddr, FlagListenAddr, "127.0.0.1:8081", "The server's listen address")
+	serveSseCmd.PersistentFlags().StringVar(&baseURL, FlagBaseURL, "",
+		"The server's base URL")
+	_ = viper.BindPFlag(FlagBaseURL, serveSseCmd.PersistentFlags().Lookup(FlagBaseURL))
+
+	serveSseCmd.PersistentFlags().StringVar(&listenAddr, FlagListenAddr, "127.0.0.1:8081",
+		"The server's listen address")
+	_ = viper.BindPFlag(FlagListenAddr, serveSseCmd.PersistentFlags().Lookup(FlagListenAddr))
 
 	serveCmd.AddCommand(serveSseCmd)
 }
