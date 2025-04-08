@@ -2,16 +2,24 @@
 
 > 🤖 [Axone](https://axone.xyz)’s [MCP](https://modelcontextprotocol.io/introduction) server – gateway to the dataverse for AI-powered tools
 
-![MCP Protocol](https://img.shields.io/badge/MCP-Compatible-green?style=for-the-badge)
-[![version](https://img.shields.io/github/v/release/axone-protocol/axone-mcp?style=for-the-badge&logo=github)](https://github.com/axone-protocol/axone-mcp/releases)
-[![lint](https://img.shields.io/github/actions/workflow/status/axone-protocol/axone-mcp/lint.yml?branch=main&label=lint&style=for-the-badge&logo=github)](https://github.com/axone-protocol/axone-mcp/actions/workflows/lint.yml)
-[![build](https://img.shields.io/github/actions/workflow/status/axone-protocol/axone-mcp/build.yml?branch=main&label=build&style=for-the-badge&logo=github)](https://github.com/axone-protocol/axone-mcp/actions/workflows/build.yml)
-[![test](https://img.shields.io/github/actions/workflow/status/axone-protocol/axone-mcp/test.yml?branch=main&label=test&style=for-the-badge&logo=github)](https://github.com/axone-protocol/axone-mcp/actions/workflows/test.yml)
-[![codecov](https://img.shields.io/codecov/c/github/axone-protocol/axone-mcp?style=for-the-badge&token=6NL9ICGZQS&logo=codecov)](https://codecov.io/gh/axone-protocol/axone-mcp)
-[![conventional commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg?style=for-the-badge&logo=conventionalcommits)](https://conventionalcommits.org)
-[![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg?style=for-the-badge)](https://github.com/semantic-release/semantic-release)
-[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg?style=for-the-badge)](https://github.com/axone-protocol/.github/blob/main/CODE_OF_CONDUCT.md)
-[![License](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg?style=for-the-badge)](https://opensource.org/licenses/BSD-3-Clause)
+<!-- Protocol compatibility -->
+[![MCP Protocol](https://img.shields.io/badge/MCP-Compatible-green)](https://modelcontextprotocol.io/introduction)
+[![Smithery](https://smithery.ai/badge/@axone-protocol/axone-mcp)](https://smithery.ai/server/@axone-protocol/axone-mcp)
+
+<!-- CI/CD -->
+[![Version](https://img.shields.io/github/v/release/axone-protocol/axone-mcp?logo=github)](https://github.com/axone-protocol/axone-mcp/releases)
+[![Lint](https://img.shields.io/github/actions/workflow/status/axone-protocol/axone-mcp/lint.yml?branch=main&label=lint&logo=github)](https://github.com/axone-protocol/axone-mcp/actions/workflows/lint.yml)
+[![Build](https://img.shields.io/github/actions/workflow/status/axone-protocol/axone-mcp/build.yml?branch=main&label=build&logo=github)](https://github.com/axone-protocol/axone-mcp/actions/workflows/build.yml)
+[![Test](https://img.shields.io/github/actions/workflow/status/axone-protocol/axone-mcp/test.yml?branch=main&label=test&logo=github)](https://github.com/axone-protocol/axone-mcp/actions/workflows/test.yml)
+[![Codecov](https://img.shields.io/codecov/c/github/axone-protocol/axone-mcp?token=6NL9ICGZQS&logo=codecov)](https://codecov.io/gh/axone-protocol/axone-mcp)
+
+<!-- Conventions -->
+[![Conventional commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg?logo=conventionalcommits)](https://conventionalcommits.org)
+[![Semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://github.com/semantic-release/semantic-release)
+
+<!-- Community & license -->
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](https://github.com/axone-protocol/.github/blob/main/CODE_OF_CONDUCT.md)
+[![License](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
 ## Axone’s MCP server
 
