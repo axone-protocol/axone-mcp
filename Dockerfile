@@ -12,6 +12,4 @@ FROM alpine:3.21.3
 
 COPY --from=go-builder /src/target/axone-mcp /usr/bin/axone-mcp
 
-WORKDIR /opt
-
 ENTRYPOINT ["/usr/bin/axone-mcp"]

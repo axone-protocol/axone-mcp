@@ -1,0 +1,28 @@
+# Smithery configuration file: https://smithery.ai/docs/config#smitheryyaml
+
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    required:
+      - nodeGrpc
+      - dataverseAddr
+    properties:
+      nodeGrpc:
+        type: string
+        default: grpc.dentrite.axone.xyz:443
+        description: Address <host>:<port> of the gRPC endpoint exposed by the axone node.
+      dataverseAddr:
+        type: string
+        default: axone1xt4ahzz2x8hpkc0tk6ekte9x6crw4w6u0r67cyt3kz9syh24pd7scvlt2w
+        description: Address of the dataverse CosmWasm contract.
+  commandFunction: |-
+    (config) => ({
+      command: "/usr/bin/axone-mcp",
+      args: [
+        "--node-grpc",
+        config.nodeGrpc,
+        "--dataverse-addr",
+        config.dataverseAddr,
+      ],
+    });
