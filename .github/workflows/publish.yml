@@ -23,7 +23,7 @@ jobs:
         id: docker_metadata
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository }},axoneprotocol/axoned
+          images: ghcr.io/${{ github.repository }},axoneprotocol/axone-mcp
           tags: |
             type=raw,enable=${{ endsWith(github.ref, github.event.repository.default_branch) }},value=nightly
             type=semver,pattern={{version}}
@@ -76,5 +76,5 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_REGISTRY_ID }}
           description: Docker image for https://github.com/{{ .repository }}
           password: ${{ secrets.DOCKER_HUB_REGISTRY_TOKEN }}
-          repository: axoneprotocol/axoned
+          repository: axoneprotocol/axone-mcp
           readme-filepath: README.md
