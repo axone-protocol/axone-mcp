@@ -59,15 +59,13 @@ Get the governance code attached to the given resource (if any).
 }
 ```
 
+## Installation
+
+Get the latest [release](https://github.com/axone-protocol/axone-mcp/releases) and put it in your `$PATH` or somewhere you can easily access.
+
 ## Usage
 
-Install the MCP server:
-
-```sh
-go install github.com/axone-protocol/axone-mcp@latest
-```
-
-### Usage with [Claude Desktop](https://claude.ai/download)
+### With [Claude Desktop](https://claude.ai/download)
 
 Add this to your `claude_desktop_config.json`:
 
