@@ -16,8 +16,7 @@
 ## Axone’s MCP server
 
 [Axone](https://axone.xyz)’s [MCP](https://modelcontextprotocol.io/introduction) server is a lightweight implementation that
-exposes Axone’s capabilities through the standardized Model-Context Protocol. It includes an authorization layer to ensure
-that access requests comply with the decentralized governance rules established on-chain.
+exposes Axone’s capabilities through the standardized Model-Context Protocol.
 
 ```mermaid
 flowchart LR
@@ -26,18 +25,13 @@ flowchart LR
     classDef resource stroke:#f00
 
     actor:::actor@{ shape: stadium, label: "Host with MCP Client<br>(Claude, IDEs, Tools)" }
-    s3Proxy:::system@{ shape: rounded, label: "Axone<br>MCP server" }
-    s3:::resource@{shape: lin-cyl, label: "Resources<br>server"}
-    files@{ shape: docs, label: "resources" }
+    mcpServer:::system@{ shape: rounded, label: "Axone<br>MCP server" }
     axone:::system@{ shape: das, label: "🔗 Axone chain" }
-    s3 --> files
 
-    actor -- access --> s3Proxy
 
-    s3Proxy ~~~
+    actor -- query --> mcpServer
 
-    s3Proxy -. ① 🛡️ check .-> axone
-    s3Proxy -. ② ✅ access .-> s3
+    mcpServer -. query .-> axone
 ```
 
 ## Available tools
