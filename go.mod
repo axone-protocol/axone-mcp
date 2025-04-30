@@ -5,7 +5,7 @@ go 1.24
 require (
 	github.com/axone-protocol/axone-sdk v1.1.0
 	github.com/justinas/alice v1.2.0
-	github.com/mark3labs/mcp-go v0.23.1
+	github.com/mark3labs/mcp-go v0.24.1
 	github.com/mattn/go-isatty v0.0.20
 	github.com/rs/zerolog v1.34.0
 	github.com/smartystreets/goconvey v1.8.1
