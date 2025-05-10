@@ -2,6 +2,7 @@ package mcp
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -9,11 +10,14 @@ import (
 
 	goctx "context"
 
+	"github.com/CosmWasm/wasmd/x/wasm/types"
+	"github.com/axone-protocol/axone-mcp/internal/mocks"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/rs/zerolog/log"
 	. "github.com/smartystreets/goconvey/convey"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/grpc"
 )
 
 func TestJSONRCPMessageHandling(t *testing.T) {
@@ -21,7 +25,7 @@ func TestJSONRCPMessageHandling(t *testing.T) {
 		tests := []struct {
 			name     string
 			message  mcp.JSONRPCMessage
-			fixture  func(*MockQueryClient)
+			fixture  func(connInterface *mocks.MockClientConnInterface)
 			validate func(response mcp.JSONRPCMessage)
 		}{
 			{
@@ -54,19 +58,26 @@ func TestJSONRCPMessageHandling(t *testing.T) {
 					Params: map[string]interface{}{
 						"name": "get_resource_governance_code",
 						"arguments": map[string]interface{}{
-							"resource": "did:key:zQ3shQEmsPLYA43Nu6mAVu2g7otxd7DdEnKoEuWFzU864Bhoj",
+							"dataverse": "axone1xt4ahzz2x8hpkc0tk6ekte9x6crw4w6u0r67cyt3kz9syh24pd7scvlt2w",
+							"resource":  "did:key:zQ3shTd79aJSfrNpMVpUVX1xrG9gabc6fmYJS4gFuwUnjKK3F",
 						},
 					},
 				},
-				fixture: func(mqc *MockQueryClient) {
-					mqc.EXPECT().
-						GetResourceGovAddr(gomock.Any(), "did:key:zQ3shQEmsPLYA43Nu6mAVu2g7otxd7DdEnKoEuWFzU864Bhoj").
-						Return("axone1maxs84nel7cgyhang9wnmnnh48z27tnggelmsmpxvqvdzpuc4w6stjkd2w", nil).
-						Times(1)
-					mqc.EXPECT().
-						GovCode(gomock.Any(), "axone1maxs84nel7cgyhang9wnmnnh48z27tnggelmsmpxvqvdzpuc4w6stjkd2w").
-						Return("hello(world).", nil).
-						Times(1)
+				fixture: func(cc *mocks.MockClientConnInterface) {
+					expectClientConn(cc, "axone1xt4ahzz2x8hpkc0tk6ekte9x6crw4w6u0r67cyt3kz9syh24pd7scvlt2w",
+						`{"dataverse":{}}`,
+						`{"triplestore_address":"axone1xa8wemfrzq03tkwqxnv9lun7rceec7wuhh8x3qjgxkaaj5fl50zsmj8u0n"}`,
+						nil)
+
+					expectClientConn(cc, "axone1xa8wemfrzq03tkwqxnv9lun7rceec7wuhh8x3qjgxkaaj5fl50zsmj8u0n",
+						`{"select":{"query":{"limit":1,"prefixes":[{"namespace":"https://w3id.org/axone/ontology/v4/schema/credential/governance/text/","prefix":"gov"}],"select":[{"variable":"code"}],"where":{"bgp":{"patterns":[{"object":{"node":{"named_node":{"full":"did:key:zQ3shTd79aJSfrNpMVpUVX1xrG9gabc6fmYJS4gFuwUnjKK3F"}}},"predicate":{"named_node":{"full":"dataverse:credential:body#subject"}},"subject":{"variable":"credId"}},{"object":{"node":{"named_node":{"prefixed":"gov:GovernanceTextCredential"}}},"predicate":{"named_node":{"full":"dataverse:credential:body#type"}},"subject":{"variable":"credId"}},{"object":{"variable":"claim"},"predicate":{"named_node":{"full":"dataverse:credential:body#claim"}},"subject":{"variable":"credId"}},{"object":{"variable":"gov"},"predicate":{"named_node":{"prefixed":"gov:isGovernedBy"}},"subject":{"variable":"claim"}},{"object":{"variable":"code"},"predicate":{"named_node":{"prefixed":"gov:fromGovernance"}},"subject":{"variable":"gov"}}]}}}}}`,
+						`{"head":{"vars":["code"]},"results":{"bindings":[{"code":{"type":"uri","value":{"full":"contract:law-stone:axone10tk8kmhhx49jahdyuxnn8d9luc9kxgc5m406k02s0y0ph59rdh7qstpynz"}}}]}}`,
+						nil)
+
+					expectClientConn(cc, "axone10tk8kmhhx49jahdyuxnn8d9luc9kxgc5m406k02s0y0ph59rdh7qstpynz",
+						`{"program_code":{}}`,
+						fmt.Sprintf(`"%s"`, base64.StdEncoding.EncodeToString([]byte(`hello(world).`))),
+						nil)
 				},
 				validate: func(response mcp.JSONRPCMessage) {
 					So(response, ShouldNotBeNil)
@@ -95,25 +106,31 @@ func TestJSONRCPMessageHandling(t *testing.T) {
 					Params: map[string]interface{}{
 						"name": "get_resource_governance_code",
 						"arguments": map[string]interface{}{
-							"resource": "did:key:zQ3shQEmsPLYA43Nu6mAVu2g7otxd7DdEnKoEuWFzU864Bhoj",
+							"dataverse": "axone1xt4ahzz2x8hpkc0tk6ekte9x6crw4w6u0r67cyt3kz9syh24pd7scvlt2w",
+							"resource":  "did:key:zQ3shTd79aJSfrNpMVpUVX1xrG9gabc6fmYJS4gFuwUnjKK3F",
 						},
 					},
 				},
-				fixture: func(mqc *MockQueryClient) {
-					mqc.EXPECT().
-						GetResourceGovAddr(gomock.Any(), "did:key:zQ3shQEmsPLYA43Nu6mAVu2g7otxd7DdEnKoEuWFzU864Bhoj").
-						Return("", errors.New("err1")).
-						Times(1)
+				fixture: func(cc *mocks.MockClientConnInterface) {
+					expectClientConn(cc, "axone1xt4ahzz2x8hpkc0tk6ekte9x6crw4w6u0r67cyt3kz9syh24pd7scvlt2w",
+						`{"dataverse":{}}`,
+						"",
+						errors.New("err1"))
 				},
 				validate: func(response mcp.JSONRPCMessage) {
 					So(response, ShouldNotBeNil)
-					resp, ok := response.(mcp.JSONRPCError)
+					resp, ok := response.(mcp.JSONRPCResponse)
 					So(ok, ShouldBeTrue)
 					So(resp.ID, ShouldEqual, 42)
 					So(resp.JSONRPC, ShouldEqual, mcp.JSONRPC_VERSION)
-					So(resp.Error, ShouldNotBeNil)
-					So(resp.Error.Message, ShouldEqual, "err1")
-					So(resp.Error.Data, ShouldBeNil)
+					ctr, ok := resp.Result.(mcp.CallToolResult)
+					So(ok, ShouldBeTrue)
+					So(ctr.IsError, ShouldBeTrue)
+					So(ctr.Content, ShouldHaveLength, 1)
+					content, ok := ctr.Content[0].(mcp.TextContent)
+					So(ok, ShouldBeTrue)
+					So(content.Text, ShouldEqual, "err1")
+					So(content.Type, ShouldEqual, "text")
 				},
 			},
 			{
@@ -127,33 +144,40 @@ func TestJSONRCPMessageHandling(t *testing.T) {
 					Params: map[string]interface{}{
 						"name": "get_resource_governance_code",
 						"arguments": map[string]interface{}{
-							"resource": "did:key:zQ3shQEmsPLYA43Nu6mAVu2g7otxd7DdEnKoEuWFzU864Bhoj",
+							"dataverse": "axone1xt4ahzz2x8hpkc0tk6ekte9x6crw4w6u0r67cyt3kz9syh24pd7scvlt2w",
+							"resource":  "did:key:zQ3shTd79aJSfrNpMVpUVX1xrG9gabc6fmYJS4gFuwUnjKK3F",
 						},
 					},
 				},
-				fixture: func(mqc *MockQueryClient) {
-					mqc.EXPECT().
-						GetResourceGovAddr(gomock.Any(), "did:key:zQ3shQEmsPLYA43Nu6mAVu2g7otxd7DdEnKoEuWFzU864Bhoj").
-						Return("axone1maxs84nel7cgyhang9wnmnnh48z27tnggelmsmpxvqvdzpuc4w6stjkd2w", nil).
-						Times(1)
-					mqc.EXPECT().
-						GovCode(gomock.Any(), "axone1maxs84nel7cgyhang9wnmnnh48z27tnggelmsmpxvqvdzpuc4w6stjkd2w").
-						Return("", errors.New("err2")).
-						Times(1)
+				fixture: func(cc *mocks.MockClientConnInterface) {
+					expectClientConn(cc, "axone1xt4ahzz2x8hpkc0tk6ekte9x6crw4w6u0r67cyt3kz9syh24pd7scvlt2w",
+						`{"dataverse":{}}`,
+						`{"triplestore_address":"axone1xa8wemfrzq03tkwqxnv9lun7rceec7wuhh8x3qjgxkaaj5fl50zsmj8u0n"}`,
+						nil)
+
+					expectClientConn(cc, "axone1xa8wemfrzq03tkwqxnv9lun7rceec7wuhh8x3qjgxkaaj5fl50zsmj8u0n",
+						`{"select":{"query":{"limit":1,"prefixes":[{"namespace":"https://w3id.org/axone/ontology/v4/schema/credential/governance/text/","prefix":"gov"}],"select":[{"variable":"code"}],"where":{"bgp":{"patterns":[{"object":{"node":{"named_node":{"full":"did:key:zQ3shTd79aJSfrNpMVpUVX1xrG9gabc6fmYJS4gFuwUnjKK3F"}}},"predicate":{"named_node":{"full":"dataverse:credential:body#subject"}},"subject":{"variable":"credId"}},{"object":{"node":{"named_node":{"prefixed":"gov:GovernanceTextCredential"}}},"predicate":{"named_node":{"full":"dataverse:credential:body#type"}},"subject":{"variable":"credId"}},{"object":{"variable":"claim"},"predicate":{"named_node":{"full":"dataverse:credential:body#claim"}},"subject":{"variable":"credId"}},{"object":{"variable":"gov"},"predicate":{"named_node":{"prefixed":"gov:isGovernedBy"}},"subject":{"variable":"claim"}},{"object":{"variable":"code"},"predicate":{"named_node":{"prefixed":"gov:fromGovernance"}},"subject":{"variable":"gov"}}]}}}}}`,
+						``,
+						errors.New("err2"))
 				},
 				validate: func(response mcp.JSONRPCMessage) {
 					So(response, ShouldNotBeNil)
-					resp, ok := response.(mcp.JSONRPCError)
+					resp, ok := response.(mcp.JSONRPCResponse)
 					So(ok, ShouldBeTrue)
 					So(resp.ID, ShouldEqual, 42)
 					So(resp.JSONRPC, ShouldEqual, mcp.JSONRPC_VERSION)
-					So(resp.Error, ShouldNotBeNil)
-					So(resp.Error.Message, ShouldEqual, "err2")
-					So(resp.Error.Data, ShouldBeNil)
+					ctr, ok := resp.Result.(mcp.CallToolResult)
+					So(ok, ShouldBeTrue)
+					So(ctr.IsError, ShouldBeTrue)
+					So(ctr.Content, ShouldHaveLength, 1)
+					content, ok := ctr.Content[0].(mcp.TextContent)
+					So(ok, ShouldBeTrue)
+					So(content.Text, ShouldEqual, "err2")
+					So(content.Type, ShouldEqual, "text")
 				},
 			},
 			{
-				name: "get_resource_governance_code tool - missing arg",
+				name: "get_resource_governance_code tool - err3",
 				message: mcp.JSONRPCRequest{
 					JSONRPC: mcp.JSONRPC_VERSION,
 					ID:      42,
@@ -161,8 +185,106 @@ func TestJSONRCPMessageHandling(t *testing.T) {
 						Method: "tools/call",
 					},
 					Params: map[string]interface{}{
-						"name":      "get_resource_governance_code",
-						"arguments": map[string]interface{}{},
+						"name": "get_resource_governance_code",
+						"arguments": map[string]interface{}{
+							"dataverse": "axone1xt4ahzz2x8hpkc0tk6ekte9x6crw4w6u0r67cyt3kz9syh24pd7scvlt2w",
+							"resource":  "did:key:zQ3shTd79aJSfrNpMVpUVX1xrG9gabc6fmYJS4gFuwUnjKK3F",
+						},
+					},
+				},
+				fixture: func(cc *mocks.MockClientConnInterface) {
+					expectClientConn(cc, "axone1xt4ahzz2x8hpkc0tk6ekte9x6crw4w6u0r67cyt3kz9syh24pd7scvlt2w",
+						`{"dataverse":{}}`,
+						`{"triplestore_address":"axone1xa8wemfrzq03tkwqxnv9lun7rceec7wuhh8x3qjgxkaaj5fl50zsmj8u0n"}`,
+						nil)
+
+					expectClientConn(cc, "axone1xa8wemfrzq03tkwqxnv9lun7rceec7wuhh8x3qjgxkaaj5fl50zsmj8u0n",
+						`{"select":{"query":{"limit":1,"prefixes":[{"namespace":"https://w3id.org/axone/ontology/v4/schema/credential/governance/text/","prefix":"gov"}],"select":[{"variable":"code"}],"where":{"bgp":{"patterns":[{"object":{"node":{"named_node":{"full":"did:key:zQ3shTd79aJSfrNpMVpUVX1xrG9gabc6fmYJS4gFuwUnjKK3F"}}},"predicate":{"named_node":{"full":"dataverse:credential:body#subject"}},"subject":{"variable":"credId"}},{"object":{"node":{"named_node":{"prefixed":"gov:GovernanceTextCredential"}}},"predicate":{"named_node":{"full":"dataverse:credential:body#type"}},"subject":{"variable":"credId"}},{"object":{"variable":"claim"},"predicate":{"named_node":{"full":"dataverse:credential:body#claim"}},"subject":{"variable":"credId"}},{"object":{"variable":"gov"},"predicate":{"named_node":{"prefixed":"gov:isGovernedBy"}},"subject":{"variable":"claim"}},{"object":{"variable":"code"},"predicate":{"named_node":{"prefixed":"gov:fromGovernance"}},"subject":{"variable":"gov"}}]}}}}}`,
+						`{"head":{"vars":["code"]},"results":{"bindings":[{"code":{"type":"uri","value":{"full":"contract:law-stone:axone10tk8kmhhx49jahdyuxnn8d9luc9kxgc5m406k02s0y0ph59rdh7qstpynz"}}}]}}`,
+						nil)
+
+					expectClientConn(cc, "axone10tk8kmhhx49jahdyuxnn8d9luc9kxgc5m406k02s0y0ph59rdh7qstpynz",
+						`{"program_code":{}}`,
+						``,
+						errors.New("err3"))
+				},
+				validate: func(response mcp.JSONRPCMessage) {
+					So(response, ShouldNotBeNil)
+					resp, ok := response.(mcp.JSONRPCResponse)
+					So(ok, ShouldBeTrue)
+					So(resp.ID, ShouldEqual, 42)
+					So(resp.JSONRPC, ShouldEqual, mcp.JSONRPC_VERSION)
+					ctr, ok := resp.Result.(mcp.CallToolResult)
+					So(ok, ShouldBeTrue)
+					So(ctr.IsError, ShouldBeTrue)
+					So(ctr.Content, ShouldHaveLength, 1)
+					content, ok := ctr.Content[0].(mcp.TextContent)
+					So(ok, ShouldBeTrue)
+					So(content.Text, ShouldEqual, "err3")
+					So(content.Type, ShouldEqual, "text")
+				},
+			},
+			{
+				name: "get_resource_governance_code tool - err4",
+				message: mcp.JSONRPCRequest{
+					JSONRPC: mcp.JSONRPC_VERSION,
+					ID:      42,
+					Request: mcp.Request{
+						Method: "tools/call",
+					},
+					Params: map[string]interface{}{
+						"name": "get_resource_governance_code",
+						"arguments": map[string]interface{}{
+							"dataverse": "axone1xt4ahzz2x8hpkc0tk6ekte9x6crw4w6u0r67cyt3kz9syh24pd7scvlt2w",
+							"resource":  "did:key:zQ3shTd79aJSfrNpMVpUVX1xrG9gabc6fmYJS4gFuwUnjKK3F",
+						},
+					},
+				},
+				fixture: func(cc *mocks.MockClientConnInterface) {
+					expectClientConn(cc, "axone1xt4ahzz2x8hpkc0tk6ekte9x6crw4w6u0r67cyt3kz9syh24pd7scvlt2w",
+						`{"dataverse":{}}`,
+						`{"triplestore_address":"axone1xa8wemfrzq03tkwqxnv9lun7rceec7wuhh8x3qjgxkaaj5fl50zsmj8u0n"}`,
+						nil)
+
+					expectClientConn(cc, "axone1xa8wemfrzq03tkwqxnv9lun7rceec7wuhh8x3qjgxkaaj5fl50zsmj8u0n",
+						`{"select":{"query":{"limit":1,"prefixes":[{"namespace":"https://w3id.org/axone/ontology/v4/schema/credential/governance/text/","prefix":"gov"}],"select":[{"variable":"code"}],"where":{"bgp":{"patterns":[{"object":{"node":{"named_node":{"full":"did:key:zQ3shTd79aJSfrNpMVpUVX1xrG9gabc6fmYJS4gFuwUnjKK3F"}}},"predicate":{"named_node":{"full":"dataverse:credential:body#subject"}},"subject":{"variable":"credId"}},{"object":{"node":{"named_node":{"prefixed":"gov:GovernanceTextCredential"}}},"predicate":{"named_node":{"full":"dataverse:credential:body#type"}},"subject":{"variable":"credId"}},{"object":{"variable":"claim"},"predicate":{"named_node":{"full":"dataverse:credential:body#claim"}},"subject":{"variable":"credId"}},{"object":{"variable":"gov"},"predicate":{"named_node":{"prefixed":"gov:isGovernedBy"}},"subject":{"variable":"claim"}},{"object":{"variable":"code"},"predicate":{"named_node":{"prefixed":"gov:fromGovernance"}},"subject":{"variable":"gov"}}]}}}}}`,
+						`{"head":{"vars":["code"]},"results":{"bindings":[{"code":{"type":"uri","value":{"full":"contract:law-stone:axone10tk8kmhhx49jahdyuxnn8d9luc9kxgc5m406k02s0y0ph59rdh7qstpynz"}}}]}}`,
+						nil)
+
+					expectClientConn(cc, "axone10tk8kmhhx49jahdyuxnn8d9luc9kxgc5m406k02s0y0ph59rdh7qstpynz",
+						`{"program_code":{}}`,
+						`"!!not_base64!!"`,
+						nil)
+				},
+				validate: func(response mcp.JSONRPCMessage) {
+					So(response, ShouldNotBeNil)
+					resp, ok := response.(mcp.JSONRPCResponse)
+					So(ok, ShouldBeTrue)
+					So(resp.ID, ShouldEqual, 42)
+					So(resp.JSONRPC, ShouldEqual, mcp.JSONRPC_VERSION)
+					ctr, ok := resp.Result.(mcp.CallToolResult)
+					So(ok, ShouldBeTrue)
+					So(ctr.IsError, ShouldBeTrue)
+					So(ctr.Content, ShouldHaveLength, 1)
+					content, ok := ctr.Content[0].(mcp.TextContent)
+					So(ok, ShouldBeTrue)
+					So(content.Text, ShouldEqual, "failed to decode base64 code '!!not_base64!!': illegal base64 data at input byte 0")
+					So(content.Type, ShouldEqual, "text")
+				},
+			},
+			{
+				name: "get_resource_governance_code tool - missing arg (1)",
+				message: mcp.JSONRPCRequest{
+					JSONRPC: mcp.JSONRPC_VERSION,
+					ID:      42,
+					Request: mcp.Request{
+						Method: "tools/call",
+					},
+					Params: map[string]interface{}{
+						"name": "get_resource_governance_code",
+						"arguments": map[string]interface{}{
+							"dataverse": "axone1xt4ahzz2x8hpkc0tk6ekte9x6crw4w6u0r67cyt3kz9syh24pd7scvlt2w",
+						},
 					},
 				},
 				validate: func(response mcp.JSONRPCMessage) {
@@ -174,6 +296,30 @@ func TestJSONRCPMessageHandling(t *testing.T) {
 					So(resp.Error.Message, ShouldEqual, "missing required parameter: resource")
 				},
 			},
+			{
+				name: "get_resource_governance_code tool - missing arg (2)",
+				message: mcp.JSONRPCRequest{
+					JSONRPC: mcp.JSONRPC_VERSION,
+					ID:      42,
+					Request: mcp.Request{
+						Method: "tools/call",
+					},
+					Params: map[string]interface{}{
+						"name": "get_resource_governance_code",
+						"arguments": map[string]interface{}{
+							"resource": "did:key:zQ3shTd79aJSfrNpMVpUVX1xrG9gabc6fmYJS4gFuwUnjKK3F",
+						},
+					},
+				},
+				validate: func(response mcp.JSONRPCMessage) {
+					So(response, ShouldNotBeNil)
+					resp, ok := response.(mcp.JSONRPCError)
+					So(ok, ShouldBeTrue)
+					So(resp.ID, ShouldEqual, 42)
+					So(resp.JSONRPC, ShouldEqual, mcp.JSONRPC_VERSION)
+					So(resp.Error.Message, ShouldEqual, "missing required parameter: dataverse")
+				},
+			},
 		}
 
 		for _, tt := range tests {
@@ -181,11 +327,11 @@ func TestJSONRCPMessageHandling(t *testing.T) {
 				ctrl := gomock.NewController(t)
 				Reset(ctrl.Finish)
 
-				dqc := NewMockQueryClient(ctrl)
+				cc := mocks.NewMockClientConnInterface(ctrl)
 				if tt.fixture != nil {
-					tt.fixture(dqc)
+					tt.fixture(cc)
 				}
-				s, err := NewServer(dqc)
+				s, err := NewServer(cc)
 				So(err, ShouldBeNil)
 
 				messageBytes, err := json.Marshal(tt.message)
@@ -208,7 +354,7 @@ func TestOnRegisterSessionLog(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		Reset(ctrl.Finish)
 
-		s, err := NewServer(NewMockQueryClient(ctrl))
+		s, err := NewServer(mocks.NewMockClientConnInterface(ctrl))
 		So(err, ShouldBeNil)
 
 		Convey("When RegisterSession is called with a new session", func() {
@@ -230,6 +376,26 @@ func TestOnRegisterSessionLog(t *testing.T) {
 			})
 		})
 	})
+}
+
+func expectClientConn(cc *mocks.MockClientConnInterface,
+	address string,
+	queryData string,
+	respData string,
+	err error,
+) {
+	cc.EXPECT().
+		Invoke(gomock.Any(), gomock.Any(),
+			&types.QuerySmartContractStateRequest{
+				Address:   address,
+				QueryData: []byte(queryData),
+			},
+			&types.QuerySmartContractStateResponse{},
+			gomock.Any()).
+		DoAndReturn(func(ctx goctx.Context, method string, req, reply any, opts ...grpc.CallOption) error {
+			reply.(*types.QuerySmartContractStateResponse).Data = []byte(respData)
+			return err
+		}).AnyTimes()
 }
 
 func captureLogOutput(f func() error) (string, error) {

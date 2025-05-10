@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/axone-protocol/axone-mcp/cmd"
-	"github.com/axone-protocol/axone-mcp/internal/mcp"
+	"github.com/axone-protocol/axone-mcp/internal/mocks"
 	"github.com/axone-protocol/axone-mcp/internal/version"
 	"go.uber.org/mock/gomock"
 
@@ -37,14 +37,14 @@ func TestServeStdioCommand(t *testing.T) {
 		}
 		for _, tt := range tests {
 			Convey(fmt.Sprintf("Given a new server executed by serve stdio command for %s", tt.name),
-				withCommandArguments([]string{"serve", "stdio", "--dataverse-addr", "whatever"},
+				withCommandArguments([]string{"serve", "stdio"},
 					withPipedIOStreams(func(c C, stdinW io.Writer, stdoutR io.Reader, stderrR io.Reader) {
 						go func() {
 							ctrl := gomock.NewController(t)
 							c.Reset(ctrl.Finish)
 
-							dqc := mcp.NewMockQueryClient(ctrl)
-							ctx := cmd.WithDataverseClient(goctx.Background(), dqc)
+							cc := mocks.NewMockClientConnInterface(ctrl)
+							ctx := cmd.WithGrpcClientConn(goctx.Background(), cc)
 							cmd.Execute(ctx)
 						}()
 

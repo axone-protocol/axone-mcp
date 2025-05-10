@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/axone-protocol/axone-mcp/internal/mcp"
-	"github.com/axone-protocol/axone-sdk/dataverse"
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
@@ -20,7 +19,6 @@ const (
 	FlagNodeGrpc          = "node-grpc"
 	FlagGrpcNoTLS         = "grpc-no-tls"
 	FlagGrpcTLSSkipVerify = "grpc-tls-skip-verify"
-	FlagDataverseAddr     = "dataverse-addr"
 	FlagGrpcTimeout       = "grpc-timeout"
 )
 
@@ -53,11 +51,6 @@ func init() {
 		"Use TLS but skip certificate verification (insecure)")
 	_ = viper.BindPFlag(FlagGrpcTLSSkipVerify, serveCmd.PersistentFlags().Lookup(FlagGrpcTLSSkipVerify))
 
-	serveCmd.PersistentFlags().String(FlagDataverseAddr, "",
-		"Address of the dataverse CosmWasm contract")
-	_ = serveCmd.MarkPersistentFlagRequired(FlagDataverseAddr)
-	_ = viper.BindPFlag(FlagDataverseAddr, serveCmd.PersistentFlags().Lookup(FlagDataverseAddr))
-
 	serveCmd.PersistentFlags().Duration(FlagGrpcTimeout, 5*time.Second,
 		"Timeout for establishing the gRPC connection to the axone node (e.g. 5s, 2m)")
 	_ = viper.BindPFlag(FlagGrpcTimeout, serveCmd.PersistentFlags().Lookup(FlagGrpcTimeout))
@@ -67,19 +60,19 @@ func init() {
 
 type contextKey string
 
-const dataverseQueryClientKey contextKey = "dataverseQueryClient"
+const grpcClientConn contextKey = "grpcClientConn"
 
-// WithDataverseClient injects a dataverse client into context.
-func WithDataverseClient(ctx context.Context, client dataverse.QueryClient) context.Context {
-	return context.WithValue(ctx, dataverseQueryClientKey, client)
+// WithGrpcClientConn returns a new context with the provided gRPC client connection.
+func WithGrpcClientConn(ctx context.Context, cc grpc.ClientConnInterface) context.Context {
+	return context.WithValue(ctx, grpcClientConn, cc)
 }
 
-// buildMCPServer creates a new MCP server using the dataverse client from context, or builds a new one.
+// buildMCPServer creates a new MCP server using the gRPC client connection from the context or builds a new one.
 func buildMCPServer(ctx context.Context) (*server.MCPServer, error) {
-	client, ok := ctx.Value(dataverseQueryClientKey).(dataverse.QueryClient)
+	client, ok := ctx.Value(grpcClientConn).(grpc.ClientConnInterface)
 	if !ok {
 		var err error
-		client, err = buildDataverseClient(ctx)
+		client, err = buildDataverseClient()
 		if err != nil {
 			return nil, err
 		}
@@ -88,17 +81,21 @@ func buildMCPServer(ctx context.Context) (*server.MCPServer, error) {
 	return mcp.NewServer(client)
 }
 
-// buildDataverseClient fetches a new dataverse client using configuration.
-func buildDataverseClient(ctx context.Context) (dataverse.QueryClient, error) {
-	ctx, cancel := context.WithTimeout(ctx, viper.GetDuration(FlagGrpcTimeout))
-	defer cancel()
-
-	return dataverse.NewQueryClient(
-		ctx,
-		viper.GetString(FlagNodeGrpc),
-		viper.GetString(FlagDataverseAddr),
+// buildDataverseClient fetches a new gRPC client connection to the axone node.
+func buildDataverseClient() (grpc.ClientConnInterface, error) {
+	address := viper.GetString(FlagNodeGrpc)
+	clientConn, err := grpc.NewClient(
+		address,
 		grpc.WithTransportCredentials(getTransportCredentials()),
+		grpc.WithConnectParams(grpc.ConnectParams{
+			MinConnectTimeout: viper.GetDuration(FlagGrpcTimeout),
+		}),
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	return clientConn, nil
 }
 
 func getTransportCredentials() grpccreds.TransportCredentials {
