@@ -11,6 +11,7 @@ import (
 	goctx "context"
 
 	"github.com/CosmWasm/wasmd/x/wasm/types"
+	"github.com/axone-protocol/axone-mcp/internal/mocks"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/rs/zerolog/log"
@@ -24,7 +25,7 @@ func TestJSONRCPMessageHandling(t *testing.T) {
 		tests := []struct {
 			name     string
 			message  mcp.JSONRPCMessage
-			fixture  func(*MockClientConnInterface)
+			fixture  func(connInterface *mocks.MockClientConnInterface)
 			validate func(response mcp.JSONRPCMessage)
 		}{
 			{
@@ -62,7 +63,7 @@ func TestJSONRCPMessageHandling(t *testing.T) {
 						},
 					},
 				},
-				fixture: func(cc *MockClientConnInterface) {
+				fixture: func(cc *mocks.MockClientConnInterface) {
 					expectClientConn(cc, "axone1xt4ahzz2x8hpkc0tk6ekte9x6crw4w6u0r67cyt3kz9syh24pd7scvlt2w",
 						`{"dataverse":{}}`,
 						`{"triplestore_address":"axone1xa8wemfrzq03tkwqxnv9lun7rceec7wuhh8x3qjgxkaaj5fl50zsmj8u0n"}`,
@@ -110,7 +111,7 @@ func TestJSONRCPMessageHandling(t *testing.T) {
 						},
 					},
 				},
-				fixture: func(cc *MockClientConnInterface) {
+				fixture: func(cc *mocks.MockClientConnInterface) {
 					expectClientConn(cc, "axone1xt4ahzz2x8hpkc0tk6ekte9x6crw4w6u0r67cyt3kz9syh24pd7scvlt2w",
 						`{"dataverse":{}}`,
 						"",
@@ -148,7 +149,7 @@ func TestJSONRCPMessageHandling(t *testing.T) {
 						},
 					},
 				},
-				fixture: func(cc *MockClientConnInterface) {
+				fixture: func(cc *mocks.MockClientConnInterface) {
 					expectClientConn(cc, "axone1xt4ahzz2x8hpkc0tk6ekte9x6crw4w6u0r67cyt3kz9syh24pd7scvlt2w",
 						`{"dataverse":{}}`,
 						`{"triplestore_address":"axone1xa8wemfrzq03tkwqxnv9lun7rceec7wuhh8x3qjgxkaaj5fl50zsmj8u0n"}`,
@@ -191,7 +192,7 @@ func TestJSONRCPMessageHandling(t *testing.T) {
 						},
 					},
 				},
-				fixture: func(cc *MockClientConnInterface) {
+				fixture: func(cc *mocks.MockClientConnInterface) {
 					expectClientConn(cc, "axone1xt4ahzz2x8hpkc0tk6ekte9x6crw4w6u0r67cyt3kz9syh24pd7scvlt2w",
 						`{"dataverse":{}}`,
 						`{"triplestore_address":"axone1xa8wemfrzq03tkwqxnv9lun7rceec7wuhh8x3qjgxkaaj5fl50zsmj8u0n"}`,
@@ -239,7 +240,7 @@ func TestJSONRCPMessageHandling(t *testing.T) {
 						},
 					},
 				},
-				fixture: func(cc *MockClientConnInterface) {
+				fixture: func(cc *mocks.MockClientConnInterface) {
 					expectClientConn(cc, "axone1xt4ahzz2x8hpkc0tk6ekte9x6crw4w6u0r67cyt3kz9syh24pd7scvlt2w",
 						`{"dataverse":{}}`,
 						`{"triplestore_address":"axone1xa8wemfrzq03tkwqxnv9lun7rceec7wuhh8x3qjgxkaaj5fl50zsmj8u0n"}`,
@@ -326,7 +327,7 @@ func TestJSONRCPMessageHandling(t *testing.T) {
 				ctrl := gomock.NewController(t)
 				Reset(ctrl.Finish)
 
-				cc := NewMockClientConnInterface(ctrl)
+				cc := mocks.NewMockClientConnInterface(ctrl)
 				if tt.fixture != nil {
 					tt.fixture(cc)
 				}
@@ -353,7 +354,7 @@ func TestOnRegisterSessionLog(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		Reset(ctrl.Finish)
 
-		s, err := NewServer(NewMockClientConnInterface(ctrl))
+		s, err := NewServer(mocks.NewMockClientConnInterface(ctrl))
 		So(err, ShouldBeNil)
 
 		Convey("When RegisterSession is called with a new session", func() {
@@ -377,7 +378,7 @@ func TestOnRegisterSessionLog(t *testing.T) {
 	})
 }
 
-func expectClientConn(cc *MockClientConnInterface,
+func expectClientConn(cc *mocks.MockClientConnInterface,
 	address string,
 	queryData string,
 	respData string,

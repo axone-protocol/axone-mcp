@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/axone-protocol/axone-mcp/cmd"
-	"github.com/axone-protocol/axone-mcp/internal/mcp"
+	"github.com/axone-protocol/axone-mcp/internal/mocks"
 	"github.com/axone-protocol/axone-mcp/internal/version"
 	"go.uber.org/mock/gomock"
 
@@ -43,7 +43,7 @@ func TestServeStdioCommand(t *testing.T) {
 							ctrl := gomock.NewController(t)
 							c.Reset(ctrl.Finish)
 
-							cc := mcp.NewMockClientConnInterface(ctrl)
+							cc := mocks.NewMockClientConnInterface(ctrl)
 							ctx := cmd.WithGrpcClientConn(goctx.Background(), cc)
 							cmd.Execute(ctx)
 						}()
