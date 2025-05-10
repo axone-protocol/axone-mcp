@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/axone-protocol/axone-mcp/internal/version"
-	"github.com/axone-protocol/axone-sdk/dataverse"
+	"google.golang.org/grpc"
 
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/rs/zerolog/log"
@@ -14,7 +14,7 @@ const (
 	ServerName = "Axone MCP Server"
 )
 
-func NewServer(dqc dataverse.QueryClient) (*server.MCPServer, error) {
+func NewServer(conn grpc.ClientConnInterface) (*server.MCPServer, error) {
 	s := server.NewMCPServer(
 		ServerName,
 		version.Version,
@@ -23,7 +23,7 @@ func NewServer(dqc dataverse.QueryClient) (*server.MCPServer, error) {
 		WithHooksLogging(),
 	)
 
-	s.AddTool(getGovernanceCode(dqc))
+	s.AddTool(getGovernanceCode(conn))
 
 	return s, nil
 }
