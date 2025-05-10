@@ -59,7 +59,7 @@ func getGovernanceCode(cc grpc.ClientConnInterface) (tool mcp.Tool, handler serv
 
 			decodedCode, err := base64.StdEncoding.DecodeString(*code)
 			if err != nil {
-				return mcp.NewToolResultError(err.Error()), fmt.Errorf("failed to decode law-stone code: %w", err)
+				return mcp.NewToolResultError(fmt.Sprintf("failed to decode base64 code '%s': %v", *code, err)), nil
 			}
 
 			return mcp.NewToolResultText(string(decodedCode)), nil
