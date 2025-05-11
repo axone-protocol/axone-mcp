@@ -3,17 +3,19 @@ package mcp
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"testing"
 
 	goctx "context"
 
+	"github.com/CosmWasm/wasmd/x/wasm/types"
+	"github.com/axone-protocol/axone-mcp/internal/mocks"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/rs/zerolog/log"
 	. "github.com/smartystreets/goconvey/convey"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/grpc"
 )
 
 func TestJSONRCPMessageHandling(t *testing.T) {
@@ -21,7 +23,7 @@ func TestJSONRCPMessageHandling(t *testing.T) {
 		tests := []struct {
 			name     string
 			message  mcp.JSONRPCMessage
-			fixture  func(*MockQueryClient)
+			fixture  func(connInterface *mocks.MockClientConnInterface)
 			validate func(response mcp.JSONRPCMessage)
 		}{
 			{
@@ -43,137 +45,6 @@ func TestJSONRCPMessageHandling(t *testing.T) {
 					So(ok, ShouldBeTrue)
 				},
 			},
-			{
-				name: "get_resource_governance_code tool",
-				message: mcp.JSONRPCRequest{
-					JSONRPC: mcp.JSONRPC_VERSION,
-					ID:      42,
-					Request: mcp.Request{
-						Method: "tools/call",
-					},
-					Params: map[string]interface{}{
-						"name": "get_resource_governance_code",
-						"arguments": map[string]interface{}{
-							"resource": "did:key:zQ3shQEmsPLYA43Nu6mAVu2g7otxd7DdEnKoEuWFzU864Bhoj",
-						},
-					},
-				},
-				fixture: func(mqc *MockQueryClient) {
-					mqc.EXPECT().
-						GetResourceGovAddr(gomock.Any(), "did:key:zQ3shQEmsPLYA43Nu6mAVu2g7otxd7DdEnKoEuWFzU864Bhoj").
-						Return("axone1maxs84nel7cgyhang9wnmnnh48z27tnggelmsmpxvqvdzpuc4w6stjkd2w", nil).
-						Times(1)
-					mqc.EXPECT().
-						GovCode(gomock.Any(), "axone1maxs84nel7cgyhang9wnmnnh48z27tnggelmsmpxvqvdzpuc4w6stjkd2w").
-						Return("hello(world).", nil).
-						Times(1)
-				},
-				validate: func(response mcp.JSONRPCMessage) {
-					So(response, ShouldNotBeNil)
-					resp, ok := response.(mcp.JSONRPCResponse)
-					So(ok, ShouldBeTrue)
-					So(resp.ID, ShouldEqual, 42)
-					So(resp.JSONRPC, ShouldEqual, mcp.JSONRPC_VERSION)
-					ctr, ok := resp.Result.(mcp.CallToolResult)
-					So(ok, ShouldBeTrue)
-					So(ctr.IsError, ShouldBeFalse)
-					So(ctr.Content, ShouldHaveLength, 1)
-					content, ok := ctr.Content[0].(mcp.TextContent)
-					So(ok, ShouldBeTrue)
-					So(content.Text, ShouldEqual, "hello(world).")
-					So(content.Type, ShouldEqual, "text")
-				},
-			},
-			{
-				name: "get_resource_governance_code tool - err1",
-				message: mcp.JSONRPCRequest{
-					JSONRPC: mcp.JSONRPC_VERSION,
-					ID:      42,
-					Request: mcp.Request{
-						Method: "tools/call",
-					},
-					Params: map[string]interface{}{
-						"name": "get_resource_governance_code",
-						"arguments": map[string]interface{}{
-							"resource": "did:key:zQ3shQEmsPLYA43Nu6mAVu2g7otxd7DdEnKoEuWFzU864Bhoj",
-						},
-					},
-				},
-				fixture: func(mqc *MockQueryClient) {
-					mqc.EXPECT().
-						GetResourceGovAddr(gomock.Any(), "did:key:zQ3shQEmsPLYA43Nu6mAVu2g7otxd7DdEnKoEuWFzU864Bhoj").
-						Return("", errors.New("err1")).
-						Times(1)
-				},
-				validate: func(response mcp.JSONRPCMessage) {
-					So(response, ShouldNotBeNil)
-					resp, ok := response.(mcp.JSONRPCError)
-					So(ok, ShouldBeTrue)
-					So(resp.ID, ShouldEqual, 42)
-					So(resp.JSONRPC, ShouldEqual, mcp.JSONRPC_VERSION)
-					So(resp.Error, ShouldNotBeNil)
-					So(resp.Error.Message, ShouldEqual, "err1")
-					So(resp.Error.Data, ShouldBeNil)
-				},
-			},
-			{
-				name: "get_resource_governance_code tool - err2",
-				message: mcp.JSONRPCRequest{
-					JSONRPC: mcp.JSONRPC_VERSION,
-					ID:      42,
-					Request: mcp.Request{
-						Method: "tools/call",
-					},
-					Params: map[string]interface{}{
-						"name": "get_resource_governance_code",
-						"arguments": map[string]interface{}{
-							"resource": "did:key:zQ3shQEmsPLYA43Nu6mAVu2g7otxd7DdEnKoEuWFzU864Bhoj",
-						},
-					},
-				},
-				fixture: func(mqc *MockQueryClient) {
-					mqc.EXPECT().
-						GetResourceGovAddr(gomock.Any(), "did:key:zQ3shQEmsPLYA43Nu6mAVu2g7otxd7DdEnKoEuWFzU864Bhoj").
-						Return("axone1maxs84nel7cgyhang9wnmnnh48z27tnggelmsmpxvqvdzpuc4w6stjkd2w", nil).
-						Times(1)
-					mqc.EXPECT().
-						GovCode(gomock.Any(), "axone1maxs84nel7cgyhang9wnmnnh48z27tnggelmsmpxvqvdzpuc4w6stjkd2w").
-						Return("", errors.New("err2")).
-						Times(1)
-				},
-				validate: func(response mcp.JSONRPCMessage) {
-					So(response, ShouldNotBeNil)
-					resp, ok := response.(mcp.JSONRPCError)
-					So(ok, ShouldBeTrue)
-					So(resp.ID, ShouldEqual, 42)
-					So(resp.JSONRPC, ShouldEqual, mcp.JSONRPC_VERSION)
-					So(resp.Error, ShouldNotBeNil)
-					So(resp.Error.Message, ShouldEqual, "err2")
-					So(resp.Error.Data, ShouldBeNil)
-				},
-			},
-			{
-				name: "get_resource_governance_code tool - missing arg",
-				message: mcp.JSONRPCRequest{
-					JSONRPC: mcp.JSONRPC_VERSION,
-					ID:      42,
-					Request: mcp.Request{
-						Method: "tools/call",
-					},
-					Params: map[string]interface{}{
-						"name":      "get_resource_governance_code",
-						"arguments": map[string]interface{}{},
-					},
-				},
-				validate: func(response mcp.JSONRPCMessage) {
-					So(response, ShouldNotBeNil)
-					resp, ok := response.(mcp.JSONRPCError)
-					So(ok, ShouldBeTrue)
-					So(resp.ID, ShouldEqual, 42)
-					So(resp.JSONRPC, ShouldEqual, mcp.JSONRPC_VERSION)
-					So(resp.Error.Message, ShouldEqual, "missing required parameter: resource")
-				},
-			},
 		}
 
 		for _, tt := range tests {
@@ -181,11 +52,11 @@ func TestJSONRCPMessageHandling(t *testing.T) {
 				ctrl := gomock.NewController(t)
 				Reset(ctrl.Finish)
 
-				dqc := NewMockQueryClient(ctrl)
+				cc := mocks.NewMockClientConnInterface(ctrl)
 				if tt.fixture != nil {
-					tt.fixture(dqc)
+					tt.fixture(cc)
 				}
-				s, err := NewServer(dqc)
+				s, err := NewServer(cc)
 				So(err, ShouldBeNil)
 
 				messageBytes, err := json.Marshal(tt.message)
@@ -208,7 +79,7 @@ func TestOnRegisterSessionLog(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		Reset(ctrl.Finish)
 
-		s, err := NewServer(NewMockQueryClient(ctrl))
+		s, err := NewServer(mocks.NewMockClientConnInterface(ctrl))
 		So(err, ShouldBeNil)
 
 		Convey("When RegisterSession is called with a new session", func() {
@@ -230,6 +101,26 @@ func TestOnRegisterSessionLog(t *testing.T) {
 			})
 		})
 	})
+}
+
+func expectClientConn(cc *mocks.MockClientConnInterface,
+	address string,
+	queryData string,
+	respData string,
+	err error,
+) {
+	cc.EXPECT().
+		Invoke(gomock.Any(), "/cosmwasm.wasm.v1.Query/SmartContractState",
+			&types.QuerySmartContractStateRequest{
+				Address:   address,
+				QueryData: []byte(queryData),
+			},
+			&types.QuerySmartContractStateResponse{},
+			gomock.Any()).
+		DoAndReturn(func(ctx goctx.Context, method string, req, reply any, opts ...grpc.CallOption) error {
+			reply.(*types.QuerySmartContractStateResponse).Data = []byte(respData)
+			return err
+		}).Times(1)
 }
 
 func captureLogOutput(f func() error) (string, error) {

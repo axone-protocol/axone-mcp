@@ -68,6 +68,13 @@ ENVIRONMENTS = \
 	windows-amd64
 ENVIRONMENTS_TARGETS = $(addprefix build-go-, $(ENVIRONMENTS))
 
+# Handle sed -i on Darwin
+SED_FLAG=
+SHELL_NAME := $(shell uname -s)
+ifeq ($(SHELL_NAME),Darwin)
+    SED_FLAG := ""
+endif
+
 default: help
 
 .PHONY: check-deps
@@ -106,7 +113,8 @@ test: test-go ## Run all the tests
 .PHONY: test-go
 test-go: deps tools ## Run tests for Go source code
 	@$(call echo_msg, 🧪, Testing, project, ...)
-	@go test -v -coverprofile ./target/coverage.txt ./... -json | $(TPARSE_BIN)
+	@go test -v -coverprofile ./target/coverage.txt $$(go list ./... | grep -v "/mocks") -json \
+      | $(TPARSE_BIN)
 
 .PHONY: lint
 lint: lint-go ## Lint files
@@ -128,7 +136,7 @@ format-go: tools ## Format Go source code
 .PHONY: mock
 mock: tools ## Generate all the mocks (for tests)
 	@$(call echo_msg, 🧱, Generating, mocks, ...)
-	@$(MOCKGEN_BIN) -destination=internal/mcp/dataverse_mocks.go -package=mcp github.com/axone-protocol/axone-sdk/dataverse QueryClient
+	@$(MOCKGEN_BIN) -destination=internal/mocks/clientconn_mock.go -package=mocks google.golang.org/grpc ClientConnInterface
 
 .PHONY: docker
 docker: build ## Build Docker container

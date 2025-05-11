@@ -1,4 +1,4 @@
-package cmd_test
+package cmd
 
 import (
 	"bufio"
@@ -12,8 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/axone-protocol/axone-mcp/cmd"
-	"github.com/axone-protocol/axone-mcp/internal/mcp"
+	"github.com/axone-protocol/axone-mcp/internal/mocks"
 	"github.com/axone-protocol/axone-mcp/internal/version"
 	"go.uber.org/mock/gomock"
 
@@ -26,26 +25,28 @@ func TestServeStdioCommand(t *testing.T) {
 	Convey("Testing Serve Stdio command", t, func() {
 		tests := []struct {
 			name     string
+			args     []string
 			input    string
 			expected string
 		}{
 			{
 				name:     "Ping",
+				args:     []string{"serve", "stdio"},
 				input:    `{"jsonrpc": "2.0", "id": 42, "method": "ping", "params": {}}`,
 				expected: `{"jsonrpc":"2.0","id":42,"result":{}}`,
 			},
 		}
 		for _, tt := range tests {
 			Convey(fmt.Sprintf("Given a new server executed by serve stdio command for %s", tt.name),
-				withCommandArguments([]string{"serve", "stdio", "--dataverse-addr", "whatever"},
+				withCommandArguments([]string{"serve", "stdio"},
 					withPipedIOStreams(func(c C, stdinW io.Writer, stdoutR io.Reader, stderrR io.Reader) {
 						go func() {
 							ctrl := gomock.NewController(t)
 							c.Reset(ctrl.Finish)
 
-							dqc := mcp.NewMockQueryClient(ctrl)
-							ctx := cmd.WithDataverseClient(goctx.Background(), dqc)
-							cmd.Execute(ctx)
+							cc := mocks.NewMockClientConnInterface(ctrl)
+							ctx := WithGrpcClientConn(goctx.Background(), cc)
+							Execute(ctx)
 						}()
 
 						Convey(fmt.Sprintf("When sending input: %s", tt.input),
@@ -72,9 +73,7 @@ func TestServeStdioCommand(t *testing.T) {
 									select {
 									case <-done:
 									case <-time.After(testTimeout):
-										buf := make([]byte, 1024)
-										_, _ = stdoutR.Read(buf)
-										t.Fatalf("timeout. partial stdout: %q", string(buf))
+										t.Fatalf("timeout")
 									}
 
 									So(got, shouldJSONEqual, tt.expected)
@@ -83,6 +82,24 @@ func TestServeStdioCommand(t *testing.T) {
 					})))
 		}
 	})
+}
+
+func TestInvalidServeStdioCommand(t *testing.T) {
+	Convey("Testing Invalid Serve Stdio command", t,
+		withCommandArguments([]string{"serve", "stdio", "--node-grpc", "%1"},
+			withPipedIOStreams(func(c C, stdinW io.Writer, stdoutR io.Reader, stderrR io.Reader) {
+				Convey("When launching the command with invalid arguments", func() {
+					ctx, cancel := goctx.WithTimeout(goctx.Background(), testTimeout)
+					Reset(func() {
+						cancel()
+					})
+					got := serveStdioCmd.ExecuteContext(ctx)
+
+					Convey("Then the command should return an error", func() {
+						c.So(got, ShouldBeError, `parse "dns:///%1": invalid URL escape "%1"`)
+					})
+				})
+			})))
 }
 
 func withCommandArguments(args []string, f func(c C)) func(c C) {
@@ -105,23 +122,23 @@ func withPipedIOStreams(f func(c C, stdinW io.Writer, stdoutR io.Reader, stderr 
 		stdoutReader, stdoutWriter := io.Pipe()
 		stderrReader, stderrWriter := io.Pipe()
 
-		origStdin := cmd.MCPStdin
-		origStdout := cmd.MCPStdout
-		origStderr := cmd.MCPStderr
+		origStdin := MCPStdin
+		origStdout := MCPStdout
+		origStderr := MCPStderr
 
 		Reset(func() {
-			cmd.MCPStdin = origStdin
-			cmd.MCPStdout = origStdout
-			cmd.MCPStderr = origStderr
+			MCPStdin = origStdin
+			MCPStdout = origStdout
+			MCPStderr = origStderr
 
 			So(stdinWriter.Close(), ShouldBeNil)
 			So(stdoutWriter.Close(), ShouldBeNil)
 			So(stderrWriter.Close(), ShouldBeNil)
 		})
 
-		cmd.MCPStdin = stdinReader
-		cmd.MCPStdout = stdoutWriter
-		cmd.MCPStderr = stderrWriter
+		MCPStdin = stdinReader
+		MCPStdout = stdoutWriter
+		MCPStderr = stderrWriter
 
 		f(c, stdinWriter, stdoutReader, stderrReader)
 	}

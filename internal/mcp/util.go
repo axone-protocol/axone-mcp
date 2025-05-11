@@ -26,3 +26,7 @@ func requiredParam[T comparable](r mcp.CallToolRequest, key string) (T, error) {
 
 	return typedVal, nil
 }
+
+func ref[T any](v T) *T {
+	return &v
+}

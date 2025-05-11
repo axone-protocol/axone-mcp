@@ -56,9 +56,13 @@ Get the governance code attached to the given resource (if any).
 
 ```json
 {
+  "dataverse": {
+    "type": "string",
+    "description": "The address of the dataverse contract"
+  },
   "resource": {
     "type": "string",
-    "description": "The resource DID to get the governance code for."
+    "description": "The DID URI of the resource"
   }
 }
 ```
@@ -80,9 +84,7 @@ Add this to your `claude_desktop_config.json` [Claude Desktop](https://claude.ai
         "serve",
         "stdio",
         "--node-grpc",
-        "grpc.dentrite.axone.xyz:443",
-        "--dataverse-addr",
-        "axone1xt4ahzz2x8hpkc0tk6ekte9x6crw4w6u0r67cyt3kz9syh24pd7scvlt2w"
+        "grpc.dentrite.axone.xyz:443"
       ]
     }
   }
@@ -92,18 +94,17 @@ Add this to your `claude_desktop_config.json` [Claude Desktop](https://claude.ai
 Flags:
 
 - `--node-grpc`: The gRPC endpoint of the Axone node to connect to.
-- `--dataverse-addr`: The dataverse address to use.
 
 ### Run with SSE transport
 
 ```sh
-axone-mcp serve sse --listen-addr localhost:8080 --node-grpc grpc.dentrite.axone.xyz:443 --dataverse-addr axone1xt4ahzz2x8hpkc0tk6ekte9x6crw4w6u0r67cyt3kz9syh24pd7scvlt2w
+axone-mcp serve sse --listen-addr localhost:8080 --node-grpc grpc.dentrite.axone.xyz:443
 ```
 
 ### Run with STDIO transport
 
 ```sh
-axone-mcp serve stdio --node-grpc grpc.dentrite.axone.xyz:443 --dataverse-addr axone1xt4ahzz2x8hpkc0tk6ekte9x6crw4w6u0r67cyt3kz9syh24pd7scvlt2w
+axone-mcp serve stdio --node-grpc grpc.dentrite.axone.xyz:443
 ```
 
 ## Build
