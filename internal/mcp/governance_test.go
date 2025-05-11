@@ -1,0 +1,365 @@
+package mcp
+
+import (
+	"encoding/base64"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"testing"
+
+	goctx "context"
+
+	"github.com/axone-protocol/axone-mcp/internal/mocks"
+	"github.com/mark3labs/mcp-go/mcp"
+	. "github.com/smartystreets/goconvey/convey"
+	"go.uber.org/mock/gomock"
+)
+
+func TestGovernanceJSONRCPMessageHandling(t *testing.T) {
+	Convey("Testing governance JSON-RPC message handling", t, func() {
+		const selectQuery = `{"select":{"query":{"limit":1,"prefixes":[{"namespace":"https://w3id.org/axone/ontology/v4/schema/credential/governance/text/","prefix":"gov"}],"select":[{"variable":"code"}],"where":{"bgp":{"patterns":[{"object":{"node":{"named_node":{"full":"did:key:zQ3shTd79aJSfrNpMVpUVX1xrG9gabc6fmYJS4gFuwUnjKK3F"}}},"predicate":{"named_node":{"full":"dataverse:credential:body#subject"}},"subject":{"variable":"credId"}},{"object":{"node":{"named_node":{"prefixed":"gov:GovernanceTextCredential"}}},"predicate":{"named_node":{"full":"dataverse:credential:body#type"}},"subject":{"variable":"credId"}},{"object":{"variable":"claim"},"predicate":{"named_node":{"full":"dataverse:credential:body#claim"}},"subject":{"variable":"credId"}},{"object":{"variable":"gov"},"predicate":{"named_node":{"prefixed":"gov:isGovernedBy"}},"subject":{"variable":"claim"}},{"object":{"variable":"code"},"predicate":{"named_node":{"prefixed":"gov:fromGovernance"}},"subject":{"variable":"gov"}}]}}}}}`
+		tests := []struct {
+			name     string
+			message  mcp.JSONRPCMessage
+			fixture  func(connInterface *mocks.MockClientConnInterface)
+			validate func(response mcp.JSONRPCMessage)
+		}{
+			{
+				name: "get_resource_governance_code tool",
+				message: mcp.JSONRPCRequest{
+					JSONRPC: mcp.JSONRPC_VERSION,
+					ID:      42,
+					Request: mcp.Request{
+						Method: "tools/call",
+					},
+					Params: map[string]interface{}{
+						"name": "get_resource_governance_code",
+						"arguments": map[string]interface{}{
+							"dataverse": "axone1xt4ahzz2x8hpkc0tk6ekte9x6crw4w6u0r67cyt3kz9syh24pd7scvlt2w",
+							"resource":  "did:key:zQ3shTd79aJSfrNpMVpUVX1xrG9gabc6fmYJS4gFuwUnjKK3F",
+						},
+					},
+				},
+				fixture: func(cc *mocks.MockClientConnInterface) {
+					expectClientConn(cc, "axone1xt4ahzz2x8hpkc0tk6ekte9x6crw4w6u0r67cyt3kz9syh24pd7scvlt2w",
+						`{"dataverse":{}}`,
+						`{"triplestore_address":"axone1xa8wemfrzq03tkwqxnv9lun7rceec7wuhh8x3qjgxkaaj5fl50zsmj8u0n"}`,
+						nil)
+
+					expectClientConn(cc, "axone1xa8wemfrzq03tkwqxnv9lun7rceec7wuhh8x3qjgxkaaj5fl50zsmj8u0n",
+						selectQuery,
+						`{"head":{"vars":["code"]},"results":{"bindings":[{"code":{"type":"uri","value":{"full":"contract:law-stone:axone10tk8kmhhx49jahdyuxnn8d9luc9kxgc5m406k02s0y0ph59rdh7qstpynz"}}}]}}`,
+						nil)
+
+					expectClientConn(cc, "axone10tk8kmhhx49jahdyuxnn8d9luc9kxgc5m406k02s0y0ph59rdh7qstpynz",
+						`{"program_code":{}}`,
+						fmt.Sprintf(`"%s"`, base64.StdEncoding.EncodeToString([]byte(`hello(world).`))),
+						nil)
+				},
+				validate: func(response mcp.JSONRPCMessage) {
+					So(response, ShouldNotBeNil)
+					resp, ok := response.(mcp.JSONRPCResponse)
+					So(ok, ShouldBeTrue)
+					So(resp.ID, ShouldEqual, 42)
+					So(resp.JSONRPC, ShouldEqual, mcp.JSONRPC_VERSION)
+					ctr, ok := resp.Result.(mcp.CallToolResult)
+					So(ok, ShouldBeTrue)
+					So(ctr.IsError, ShouldBeFalse)
+					So(ctr.Content, ShouldHaveLength, 1)
+					content, ok := ctr.Content[0].(mcp.TextContent)
+					So(ok, ShouldBeTrue)
+					So(content.Text, ShouldEqual, "hello(world).")
+					So(content.Type, ShouldEqual, "text")
+				},
+			},
+			{
+				name: "get_resource_governance_code tool - err1",
+				message: mcp.JSONRPCRequest{
+					JSONRPC: mcp.JSONRPC_VERSION,
+					ID:      42,
+					Request: mcp.Request{
+						Method: "tools/call",
+					},
+					Params: map[string]interface{}{
+						"name": "get_resource_governance_code",
+						"arguments": map[string]interface{}{
+							"dataverse": "axone1xt4ahzz2x8hpkc0tk6ekte9x6crw4w6u0r67cyt3kz9syh24pd7scvlt2w",
+							"resource":  "did:key:zQ3shTd79aJSfrNpMVpUVX1xrG9gabc6fmYJS4gFuwUnjKK3F",
+						},
+					},
+				},
+				fixture: func(cc *mocks.MockClientConnInterface) {
+					expectClientConn(cc, "axone1xt4ahzz2x8hpkc0tk6ekte9x6crw4w6u0r67cyt3kz9syh24pd7scvlt2w",
+						`{"dataverse":{}}`,
+						"",
+						errors.New("err1"))
+				},
+				validate: func(response mcp.JSONRPCMessage) {
+					So(response, ShouldNotBeNil)
+					resp, ok := response.(mcp.JSONRPCResponse)
+					So(ok, ShouldBeTrue)
+					So(resp.ID, ShouldEqual, 42)
+					So(resp.JSONRPC, ShouldEqual, mcp.JSONRPC_VERSION)
+					ctr, ok := resp.Result.(mcp.CallToolResult)
+					So(ok, ShouldBeTrue)
+					So(ctr.IsError, ShouldBeTrue)
+					So(ctr.Content, ShouldHaveLength, 1)
+					content, ok := ctr.Content[0].(mcp.TextContent)
+					So(ok, ShouldBeTrue)
+					So(content.Text, ShouldEqual, "err1")
+					So(content.Type, ShouldEqual, "text")
+				},
+			},
+			{
+				name: "get_resource_governance_code tool - err2",
+				message: mcp.JSONRPCRequest{
+					JSONRPC: mcp.JSONRPC_VERSION,
+					ID:      42,
+					Request: mcp.Request{
+						Method: "tools/call",
+					},
+					Params: map[string]interface{}{
+						"name": "get_resource_governance_code",
+						"arguments": map[string]interface{}{
+							"dataverse": "axone1xt4ahzz2x8hpkc0tk6ekte9x6crw4w6u0r67cyt3kz9syh24pd7scvlt2w",
+							"resource":  "did:key:zQ3shTd79aJSfrNpMVpUVX1xrG9gabc6fmYJS4gFuwUnjKK3F",
+						},
+					},
+				},
+				fixture: func(cc *mocks.MockClientConnInterface) {
+					expectClientConn(cc, "axone1xt4ahzz2x8hpkc0tk6ekte9x6crw4w6u0r67cyt3kz9syh24pd7scvlt2w",
+						`{"dataverse":{}}`,
+						`{"triplestore_address":"axone1xa8wemfrzq03tkwqxnv9lun7rceec7wuhh8x3qjgxkaaj5fl50zsmj8u0n"}`,
+						nil)
+
+					expectClientConn(cc, "axone1xa8wemfrzq03tkwqxnv9lun7rceec7wuhh8x3qjgxkaaj5fl50zsmj8u0n",
+						selectQuery,
+						``,
+						errors.New("err2"))
+				},
+				validate: func(response mcp.JSONRPCMessage) {
+					So(response, ShouldNotBeNil)
+					resp, ok := response.(mcp.JSONRPCResponse)
+					So(ok, ShouldBeTrue)
+					So(resp.ID, ShouldEqual, 42)
+					So(resp.JSONRPC, ShouldEqual, mcp.JSONRPC_VERSION)
+					ctr, ok := resp.Result.(mcp.CallToolResult)
+					So(ok, ShouldBeTrue)
+					So(ctr.IsError, ShouldBeTrue)
+					So(ctr.Content, ShouldHaveLength, 1)
+					content, ok := ctr.Content[0].(mcp.TextContent)
+					So(ok, ShouldBeTrue)
+					So(content.Text, ShouldEqual, "err2")
+					So(content.Type, ShouldEqual, "text")
+				},
+			},
+			{
+				name: "get_resource_governance_code tool - err3",
+				message: mcp.JSONRPCRequest{
+					JSONRPC: mcp.JSONRPC_VERSION,
+					ID:      42,
+					Request: mcp.Request{
+						Method: "tools/call",
+					},
+					Params: map[string]interface{}{
+						"name": "get_resource_governance_code",
+						"arguments": map[string]interface{}{
+							"dataverse": "axone1xt4ahzz2x8hpkc0tk6ekte9x6crw4w6u0r67cyt3kz9syh24pd7scvlt2w",
+							"resource":  "did:key:zQ3shTd79aJSfrNpMVpUVX1xrG9gabc6fmYJS4gFuwUnjKK3F",
+						},
+					},
+				},
+				fixture: func(cc *mocks.MockClientConnInterface) {
+					expectClientConn(cc, "axone1xt4ahzz2x8hpkc0tk6ekte9x6crw4w6u0r67cyt3kz9syh24pd7scvlt2w",
+						`{"dataverse":{}}`,
+						`{"triplestore_address":"axone1xa8wemfrzq03tkwqxnv9lun7rceec7wuhh8x3qjgxkaaj5fl50zsmj8u0n"}`,
+						nil)
+
+					expectClientConn(cc, "axone1xa8wemfrzq03tkwqxnv9lun7rceec7wuhh8x3qjgxkaaj5fl50zsmj8u0n",
+						selectQuery,
+						`{"head":{"vars":["code"]},"results":{"bindings":[{"code":{"type":"uri","value":{"full":"contract:law-stone:axone10tk8kmhhx49jahdyuxnn8d9luc9kxgc5m406k02s0y0ph59rdh7qstpynz"}}}]}}`,
+						nil)
+
+					expectClientConn(cc, "axone10tk8kmhhx49jahdyuxnn8d9luc9kxgc5m406k02s0y0ph59rdh7qstpynz",
+						`{"program_code":{}}`,
+						``,
+						errors.New("err3"))
+				},
+				validate: func(response mcp.JSONRPCMessage) {
+					So(response, ShouldNotBeNil)
+					resp, ok := response.(mcp.JSONRPCResponse)
+					So(ok, ShouldBeTrue)
+					So(resp.ID, ShouldEqual, 42)
+					So(resp.JSONRPC, ShouldEqual, mcp.JSONRPC_VERSION)
+					ctr, ok := resp.Result.(mcp.CallToolResult)
+					So(ok, ShouldBeTrue)
+					So(ctr.IsError, ShouldBeTrue)
+					So(ctr.Content, ShouldHaveLength, 1)
+					content, ok := ctr.Content[0].(mcp.TextContent)
+					So(ok, ShouldBeTrue)
+					So(content.Text, ShouldEqual, "err3")
+					So(content.Type, ShouldEqual, "text")
+				},
+			},
+			{
+				name: "get_resource_governance_code tool - err4",
+				message: mcp.JSONRPCRequest{
+					JSONRPC: mcp.JSONRPC_VERSION,
+					ID:      42,
+					Request: mcp.Request{
+						Method: "tools/call",
+					},
+					Params: map[string]interface{}{
+						"name": "get_resource_governance_code",
+						"arguments": map[string]interface{}{
+							"dataverse": "axone1xt4ahzz2x8hpkc0tk6ekte9x6crw4w6u0r67cyt3kz9syh24pd7scvlt2w",
+							"resource":  "did:key:zQ3shTd79aJSfrNpMVpUVX1xrG9gabc6fmYJS4gFuwUnjKK3F",
+						},
+					},
+				},
+				fixture: func(cc *mocks.MockClientConnInterface) {
+					expectClientConn(cc, "axone1xt4ahzz2x8hpkc0tk6ekte9x6crw4w6u0r67cyt3kz9syh24pd7scvlt2w",
+						`{"dataverse":{}}`,
+						`{"triplestore_address":"axone1xa8wemfrzq03tkwqxnv9lun7rceec7wuhh8x3qjgxkaaj5fl50zsmj8u0n"}`,
+						nil)
+
+					expectClientConn(cc, "axone1xa8wemfrzq03tkwqxnv9lun7rceec7wuhh8x3qjgxkaaj5fl50zsmj8u0n",
+						selectQuery,
+						`{"head":{"vars":["code"]},"results":{"bindings":[{"code":{"type":"uri","value":{"full":"contract:law-stone:axone10tk8kmhhx49jahdyuxnn8d9luc9kxgc5m406k02s0y0ph59rdh7qstpynz"}}}]}}`,
+						nil)
+
+					expectClientConn(cc, "axone10tk8kmhhx49jahdyuxnn8d9luc9kxgc5m406k02s0y0ph59rdh7qstpynz",
+						`{"program_code":{}}`,
+						`"!!not_base64!!"`,
+						nil)
+				},
+				validate: func(response mcp.JSONRPCMessage) {
+					So(response, ShouldNotBeNil)
+					resp, ok := response.(mcp.JSONRPCResponse)
+					So(ok, ShouldBeTrue)
+					So(resp.ID, ShouldEqual, 42)
+					So(resp.JSONRPC, ShouldEqual, mcp.JSONRPC_VERSION)
+					ctr, ok := resp.Result.(mcp.CallToolResult)
+					So(ok, ShouldBeTrue)
+					So(ctr.IsError, ShouldBeTrue)
+					So(ctr.Content, ShouldHaveLength, 1)
+					content, ok := ctr.Content[0].(mcp.TextContent)
+					So(ok, ShouldBeTrue)
+					So(content.Text, ShouldEqual, "failed to decode base64 code '!!not_base64!!': illegal base64 data at input byte 0")
+					So(content.Type, ShouldEqual, "text")
+				},
+			},
+			{
+				name: "get_resource_governance_code tool - err5",
+				message: mcp.JSONRPCRequest{
+					JSONRPC: mcp.JSONRPC_VERSION,
+					ID:      42,
+					Request: mcp.Request{
+						Method: "tools/call",
+					},
+					Params: map[string]interface{}{
+						"name": "get_resource_governance_code",
+						"arguments": map[string]interface{}{
+							"dataverse": "axone1xt4ahzz2x8hpkc0tk6ekte9x6crw4w6u0r67cyt3kz9syh24pd7scvlt2w",
+							"resource":  "did:key:zQ3shTd79aJSfrNpMVpUVX1xrG9gabc6fmYJS4gFuwUnjKK3F",
+						},
+					},
+				},
+				fixture: func(cc *mocks.MockClientConnInterface) {
+					expectClientConn(cc, "axone1xt4ahzz2x8hpkc0tk6ekte9x6crw4w6u0r67cyt3kz9syh24pd7scvlt2w",
+						`{"dataverse":{}}`,
+						`{"triplestore_address":""}`,
+						nil)
+				},
+				validate: func(response mcp.JSONRPCMessage) {
+					So(response, ShouldNotBeNil)
+					resp, ok := response.(mcp.JSONRPCResponse)
+					So(ok, ShouldBeTrue)
+					So(resp.ID, ShouldEqual, 42)
+					So(resp.JSONRPC, ShouldEqual, mcp.JSONRPC_VERSION)
+					ctr, ok := resp.Result.(mcp.CallToolResult)
+					So(ok, ShouldBeTrue)
+					So(ctr.IsError, ShouldBeTrue)
+					So(ctr.Content, ShouldHaveLength, 1)
+					content, ok := ctr.Content[0].(mcp.TextContent)
+					So(ok, ShouldBeTrue)
+					So(content.Text, ShouldEqual, "no triplestore address found")
+					So(content.Type, ShouldEqual, "text")
+				},
+			},
+			{
+				name: "get_resource_governance_code tool - missing arg (1)",
+				message: mcp.JSONRPCRequest{
+					JSONRPC: mcp.JSONRPC_VERSION,
+					ID:      42,
+					Request: mcp.Request{
+						Method: "tools/call",
+					},
+					Params: map[string]interface{}{
+						"name": "get_resource_governance_code",
+						"arguments": map[string]interface{}{
+							"dataverse": "axone1xt4ahzz2x8hpkc0tk6ekte9x6crw4w6u0r67cyt3kz9syh24pd7scvlt2w",
+						},
+					},
+				},
+				validate: func(response mcp.JSONRPCMessage) {
+					So(response, ShouldNotBeNil)
+					resp, ok := response.(mcp.JSONRPCError)
+					So(ok, ShouldBeTrue)
+					So(resp.ID, ShouldEqual, 42)
+					So(resp.JSONRPC, ShouldEqual, mcp.JSONRPC_VERSION)
+					So(resp.Error.Message, ShouldEqual, "missing required parameter: resource")
+				},
+			},
+			{
+				name: "get_resource_governance_code tool - missing arg (2)",
+				message: mcp.JSONRPCRequest{
+					JSONRPC: mcp.JSONRPC_VERSION,
+					ID:      42,
+					Request: mcp.Request{
+						Method: "tools/call",
+					},
+					Params: map[string]interface{}{
+						"name": "get_resource_governance_code",
+						"arguments": map[string]interface{}{
+							"resource": "did:key:zQ3shTd79aJSfrNpMVpUVX1xrG9gabc6fmYJS4gFuwUnjKK3F",
+						},
+					},
+				},
+				validate: func(response mcp.JSONRPCMessage) {
+					So(response, ShouldNotBeNil)
+					resp, ok := response.(mcp.JSONRPCError)
+					So(ok, ShouldBeTrue)
+					So(resp.ID, ShouldEqual, 42)
+					So(resp.JSONRPC, ShouldEqual, mcp.JSONRPC_VERSION)
+					So(resp.Error.Message, ShouldEqual, "missing required parameter: dataverse")
+				},
+			},
+		}
+
+		for _, tt := range tests {
+			Convey(fmt.Sprintf("Given a new server for %s", tt.name), func() {
+				ctrl := gomock.NewController(t)
+				Reset(ctrl.Finish)
+
+				cc := mocks.NewMockClientConnInterface(ctrl)
+				if tt.fixture != nil {
+					tt.fixture(cc)
+				}
+				s, err := NewServer(cc)
+				So(err, ShouldBeNil)
+
+				messageBytes, err := json.Marshal(tt.message)
+				So(err, ShouldBeNil)
+
+				Convey(fmt.Sprintf("When handling %s message", tt.name), func() {
+					ctx := goctx.Background()
+					got := s.HandleMessage(ctx, messageBytes)
+					Convey("Then the response should be valid", func() {
+						tt.validate(got)
+					})
+				})
+			})
+		}
+	})
+}
