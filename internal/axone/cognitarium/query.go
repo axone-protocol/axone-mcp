@@ -118,9 +118,12 @@ func GetGovernanceAddressForResource(
 		return "", fmt.Errorf("expected URI, got %T: %w", codeBinding.ValueType, ErrTypeMimatch)
 	}
 
+	if code.Value.Full == nil {
+		return "", fmt.Errorf("code URI is nil")
+	}
 	codeURI := string(*code.Value.Full)
 	addr := codeURI
-	if i := strings.LastIndex(string(*code.Value.Full), ":"); i != -1 {
+	if i := strings.LastIndex(codeURI, ":"); i != -1 {
 		addr = codeURI[i+1:]
 	}
 

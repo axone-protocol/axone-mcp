@@ -3,6 +3,7 @@ package dataverse
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	schema "github.com/axone-protocol/axone-contract-schema/go/dataverse-schema/v6"
@@ -14,7 +15,7 @@ func Dataverse(ctx context.Context, cc grpc.ClientConnInterface,
 ) (*schema.DataverseResponse, error) {
 	rawQueryData, err := json.Marshal(map[string]any{"dataverse": req})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("encode dataverse query (%s): %w", address, err)
 	}
 
 	rawResponseData, err := queryContract(ctx, cc, address, rawQueryData, opts...)
@@ -24,7 +25,7 @@ func Dataverse(ctx context.Context, cc grpc.ClientConnInterface,
 
 	var response schema.DataverseResponse
 	if err := json.Unmarshal(rawResponseData, &response); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("decode dataverse response (%s): %w", address, err)
 	}
 
 	return &response, nil

@@ -110,7 +110,7 @@ func expectClientConn(cc *mocks.MockClientConnInterface,
 	err error,
 ) {
 	cc.EXPECT().
-		Invoke(gomock.Any(), gomock.Any(),
+		Invoke(gomock.Any(), "/cosmwasm.wasm.v1.Query/SmartContractState",
 			&types.QuerySmartContractStateRequest{
 				Address:   address,
 				QueryData: []byte(queryData),
@@ -120,7 +120,7 @@ func expectClientConn(cc *mocks.MockClientConnInterface,
 		DoAndReturn(func(ctx goctx.Context, method string, req, reply any, opts ...grpc.CallOption) error {
 			reply.(*types.QuerySmartContractStateResponse).Data = []byte(respData)
 			return err
-		}).AnyTimes()
+		}).Times(1)
 }
 
 func captureLogOutput(f func() error) (string, error) {
