@@ -13,12 +13,26 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/rs/zerolog/log"
+	"github.com/samber/lo"
 	. "github.com/smartystreets/goconvey/convey"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc"
 )
 
 func TestJSONRCPMessageHandling(t *testing.T) {
+	readWriteFooTool := server.ServerTool{
+		Tool: mcp.NewTool("read_write_foo",
+			mcp.WithToolAnnotation(mcp.ToolAnnotation{
+				Title:        "ReadWriteFoo",
+				ReadOnlyHint: false,
+			})),
+		Handler: func(ctx goctx.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+			t.Fatalf("read_write_foo tool shouldn't be called")
+
+			return &mcp.CallToolResult{}, nil
+		},
+	}
+
 	Convey("Testing JSON-RPC message handling", t, func() {
 		tests := []struct {
 			name     string
@@ -46,6 +60,33 @@ func TestJSONRCPMessageHandling(t *testing.T) {
 				},
 			},
 			{
+				name: "Tools list",
+				message: mcp.JSONRPCRequest{
+					JSONRPC: mcp.JSONRPC_VERSION,
+					ID:      42,
+					Request: mcp.Request{
+						Method: "tools/list",
+					},
+				},
+				fixture: func(srv *server.MCPServer, cc *mocks.MockClientConnInterface) {
+					addTools(srv, ReadOnly, readWriteFooTool)
+				},
+				validate: func(response mcp.JSONRPCMessage) {
+					So(response, ShouldNotBeNil)
+					resp, ok := response.(mcp.JSONRPCResponse)
+					So(ok, ShouldBeTrue)
+					So(resp.ID, ShouldEqual, 42)
+					So(resp.JSONRPC, ShouldEqual, mcp.JSONRPC_VERSION)
+					ctr, ok := resp.Result.(mcp.ListToolsResult)
+					So(ok, ShouldBeTrue)
+					tools := lo.Map(ctr.Tools, func(t mcp.Tool, _ int) string {
+						return t.Name
+					})
+					So(tools, ShouldContain, "get_resource_governance_code")
+					So(tools, ShouldNotContain, "read_write_foo")
+				},
+			},
+			{
 				name: "ReadWriteFoo",
 				message: mcp.JSONRPCRequest{
 					JSONRPC: mcp.JSONRPC_VERSION,
@@ -58,20 +99,7 @@ func TestJSONRCPMessageHandling(t *testing.T) {
 					},
 				},
 				fixture: func(srv *server.MCPServer, cc *mocks.MockClientConnInterface) {
-					addTools(srv, ReadOnly,
-						server.ServerTool{
-							Tool: mcp.NewTool("read_write_foo",
-								mcp.WithToolAnnotation(mcp.ToolAnnotation{
-									Title:        "ReadWriteFoo",
-									ReadOnlyHint: false,
-								})),
-							Handler: func(ctx goctx.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-								t.Fatalf("read_write_foo tool shouldn't be called")
-
-								return &mcp.CallToolResult{}, nil
-							},
-						},
-					)
+					addTools(srv, ReadOnly, readWriteFooTool)
 				},
 				validate: func(response mcp.JSONRPCMessage) {
 					So(response, ShouldNotBeNil)
