@@ -346,7 +346,7 @@ func TestGovernanceJSONRCPMessageHandling(t *testing.T) {
 				if tt.fixture != nil {
 					tt.fixture(cc)
 				}
-				s, err := NewServer(cc)
+				s, err := NewServer(cc, ReadWrite)
 				So(err, ShouldBeNil)
 
 				messageBytes, err := json.Marshal(tt.message)

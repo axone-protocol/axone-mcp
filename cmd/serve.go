@@ -20,6 +20,7 @@ const (
 	FlagGrpcNoTLS         = "grpc-no-tls"
 	FlagGrpcTLSSkipVerify = "grpc-tls-skip-verify"
 	FlagGrpcTimeout       = "grpc-timeout"
+	FlagReadOnly          = "read-only"
 )
 
 // serveCmd represents the base serve command.
@@ -55,6 +56,10 @@ func init() {
 		"Timeout for establishing the gRPC connection to the axone node (e.g. 5s, 2m)")
 	_ = viper.BindPFlag(FlagGrpcTimeout, serveCmd.PersistentFlags().Lookup(FlagGrpcTimeout))
 
+	serveCmd.PersistentFlags().Bool(FlagReadOnly, false,
+		"Restrict the server to read-only operations")
+	_ = viper.BindPFlag(FlagReadOnly, serveCmd.PersistentFlags().Lookup(FlagReadOnly))
+
 	serveCmd.MarkFlagsMutuallyExclusive(FlagGrpcNoTLS, FlagGrpcTLSSkipVerify)
 }
 
@@ -78,7 +83,11 @@ func buildMCPServer(ctx context.Context) (*server.MCPServer, error) {
 		}
 	}
 
-	return mcp.NewServer(client)
+	mode := mcp.ReadWrite
+	if viper.GetBool(FlagReadOnly) {
+		mode = mcp.ReadOnly
+	}
+	return mcp.NewServer(client, mode)
 }
 
 // buildDataverseClient fetches a new gRPC client connection to the axone node.
