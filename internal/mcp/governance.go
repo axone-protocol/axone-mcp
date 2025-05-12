@@ -22,7 +22,7 @@ func getGovernanceCode(cc grpc.ClientConnInterface) server.ServerTool {
 		mcp.WithDescription(`Get the governance code attached to the given resource (if any) in the given dataverse`),
 		mcp.WithToolAnnotation(mcp.ToolAnnotation{
 			Title:        "Get the governance code for a resource",
-			ReadOnlyHint: true,
+			ReadOnlyHint: ref(true),
 		}),
 		mcp.WithString(dataverseAddressParam,
 			mcp.Required(),
