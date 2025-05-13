@@ -25,9 +25,16 @@ const (
 	ReadWrite AccessMode = false
 )
 
+type serverToolFactory func(grpc.ClientConnInterface) server.ServerTool
+
+var serverToolFactories = []serverToolFactory{
+	getDataverse,
+	getGovernanceCode,
+}
+
 // NewServer creates a new MCP server instance.
 // It takes a gRPC connection to the Axone node and a read-only flag which  restricts the server to read-only operations.
-func NewServer(conn grpc.ClientConnInterface, mode AccessMode) (*server.MCPServer, error) {
+func NewServer(cc grpc.ClientConnInterface, mode AccessMode) (*server.MCPServer, error) {
 	s := server.NewMCPServer(
 		ServerName,
 		version.Version,
@@ -41,39 +48,41 @@ func NewServer(conn grpc.ClientConnInterface, mode AccessMode) (*server.MCPServe
 		WithHooksLogging(),
 	)
 
-	addTools(s, mode,
-		getGovernanceCode(conn),
-	)
+	addServerTools(s, mode, cc, serverToolFactories...)
 
 	return s, nil
 }
 
+func addServerTools(s *server.MCPServer, mode AccessMode, cc grpc.ClientConnInterface, factories ...serverToolFactory) {
+	tools := lo.Map(factories, createTool(cc))
+	addTools(s, mode, tools...)
+}
+
 func addTools(s *server.MCPServer, mode AccessMode, tools ...server.ServerTool) {
-	s.AddTools(
-		wrapToolsWithAccessGuard(
-			mode,
-			tools,
-		)...)
+	guardedTools := lo.Map(tools, wrapToolWithAccessGuard(mode))
+	s.AddTools(guardedTools...)
 }
 
-func wrapToolsWithAccessGuard(mode AccessMode, tools []server.ServerTool) []server.ServerTool {
-	return lo.Map(tools, func(t server.ServerTool, _ int) server.ServerTool {
-		return wrapToolWithAccessGuard(mode, t)
-	})
-}
-
-func wrapToolWithAccessGuard(mode AccessMode, srvTool server.ServerTool) server.ServerTool {
-	next := srvTool.Handler
-	srvTool.Handler = func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		if mode == ReadOnly && !lo.FromPtr(srvTool.Tool.Annotations.ReadOnlyHint) {
-			return mcp.NewToolResultError(
-				fmt.Sprintf("The server is in read-only mode; tool %s cannot be invoked.", srvTool.Tool.Name),
-			), nil
-		}
-		return next(ctx, request)
+func createTool(cc grpc.ClientConnInterface) func(factory serverToolFactory, _ int) server.ServerTool {
+	return func(factory serverToolFactory, _ int) server.ServerTool {
+		return factory(cc)
 	}
+}
 
-	return srvTool
+func wrapToolWithAccessGuard(mode AccessMode) func(srvTool server.ServerTool, _ int) server.ServerTool {
+	return func(srvTool server.ServerTool, _ int) server.ServerTool {
+		next := srvTool.Handler
+		srvTool.Handler = func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+			if mode == ReadOnly && !lo.FromPtr(srvTool.Tool.Annotations.ReadOnlyHint) {
+				return mcp.NewToolResultError(
+					fmt.Sprintf("The server is in read-only mode; tool %s cannot be invoked.", srvTool.Tool.Name),
+				), nil
+			}
+			return next(ctx, request)
+		}
+
+		return srvTool
+	}
 }
 
 func WithHooksLogging() server.ServerOption {

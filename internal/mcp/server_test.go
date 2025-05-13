@@ -20,17 +20,19 @@ import (
 )
 
 func TestJSONRCPMessageHandling(t *testing.T) {
-	readWriteFooTool := server.ServerTool{
-		Tool: mcp.NewTool("read_write_foo",
-			mcp.WithToolAnnotation(mcp.ToolAnnotation{
-				Title:        "ReadWriteFoo",
-				ReadOnlyHint: mcp.ToBoolPtr(false),
-			})),
-		Handler: func(ctx goctx.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			t.Fatalf("read_write_foo tool shouldn't be called")
+	readWriteFooToolFactory := func(_ grpc.ClientConnInterface) server.ServerTool {
+		return server.ServerTool{
+			Tool: mcp.NewTool("read_write_foo",
+				mcp.WithToolAnnotation(mcp.ToolAnnotation{
+					Title:        "ReadWriteFoo",
+					ReadOnlyHint: mcp.ToBoolPtr(false),
+				})),
+			Handler: func(ctx goctx.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+				t.Fatalf("read_write_foo tool shouldn't be called")
 
-			return &mcp.CallToolResult{}, nil
-		},
+				return &mcp.CallToolResult{}, nil
+			},
+		}
 	}
 
 	Convey("Testing JSON-RPC message handling", t, func() {
@@ -69,7 +71,7 @@ func TestJSONRCPMessageHandling(t *testing.T) {
 					},
 				},
 				fixture: func(srv *server.MCPServer, cc *mocks.MockClientConnInterface) {
-					addTools(srv, ReadOnly, readWriteFooTool)
+					addTools(srv, ReadOnly, readWriteFooToolFactory(cc))
 				},
 				validate: func(response mcp.JSONRPCMessage) {
 					So(response, ShouldNotBeNil)
@@ -99,7 +101,7 @@ func TestJSONRCPMessageHandling(t *testing.T) {
 					},
 				},
 				fixture: func(srv *server.MCPServer, cc *mocks.MockClientConnInterface) {
-					addTools(srv, ReadOnly, readWriteFooTool)
+					addTools(srv, ReadOnly, readWriteFooToolFactory(cc))
 				},
 				validate: func(response mcp.JSONRPCMessage) {
 					So(response, ShouldNotBeNil)
