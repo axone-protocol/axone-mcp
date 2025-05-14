@@ -44,19 +44,7 @@ func TestDataverseJSONRCPMessageHandling(t *testing.T) {
 						nil)
 				},
 				validate: func(response mcp.JSONRPCMessage) {
-					So(response, ShouldNotBeNil)
-					resp, ok := response.(mcp.JSONRPCResponse)
-					So(ok, ShouldBeTrue)
-					So(resp.ID, ShouldEqual, 42)
-					So(resp.JSONRPC, ShouldEqual, mcp.JSONRPC_VERSION)
-					ctr, ok := resp.Result.(mcp.CallToolResult)
-					So(ok, ShouldBeTrue)
-					So(ctr.IsError, ShouldBeFalse)
-					So(ctr.Content, ShouldHaveLength, 1)
-					content, ok := ctr.Content[0].(mcp.TextContent)
-					So(ok, ShouldBeTrue)
-					So(content.Text, ShouldEqual, `{"name":"dataverse-42","triplestore_address":"axone1xa8wemfrzq03tkwqxnv9lun7rceec7wuhh8x3qjgxkaaj5fl50zsmj8u0n"}`)
-					So(content.Type, ShouldEqual, "text")
+					So(response, ShouldBeJSONRPCResponseSuccessWithText, `{"name":"dataverse-42","triplestore_address":"axone1xa8wemfrzq03tkwqxnv9lun7rceec7wuhh8x3qjgxkaaj5fl50zsmj8u0n"}`)
 				},
 			},
 			{
@@ -81,19 +69,7 @@ func TestDataverseJSONRCPMessageHandling(t *testing.T) {
 						errors.New("err1"))
 				},
 				validate: func(response mcp.JSONRPCMessage) {
-					So(response, ShouldNotBeNil)
-					resp, ok := response.(mcp.JSONRPCResponse)
-					So(ok, ShouldBeTrue)
-					So(resp.ID, ShouldEqual, 42)
-					So(resp.JSONRPC, ShouldEqual, mcp.JSONRPC_VERSION)
-					ctr, ok := resp.Result.(mcp.CallToolResult)
-					So(ok, ShouldBeTrue)
-					So(ctr.IsError, ShouldBeTrue)
-					So(ctr.Content, ShouldHaveLength, 1)
-					content, ok := ctr.Content[0].(mcp.TextContent)
-					So(ok, ShouldBeTrue)
-					So(content.Text, ShouldEqual, "err1")
-					So(content.Type, ShouldEqual, "text")
+					So(response, ShouldBeJSONRPCResponseErrorWithText, "err1")
 				},
 			},
 			{
@@ -109,12 +85,7 @@ func TestDataverseJSONRCPMessageHandling(t *testing.T) {
 					},
 				},
 				validate: func(response mcp.JSONRPCMessage) {
-					So(response, ShouldNotBeNil)
-					resp, ok := response.(mcp.JSONRPCError)
-					So(ok, ShouldBeTrue)
-					So(resp.ID, ShouldEqual, 42)
-					So(resp.JSONRPC, ShouldEqual, mcp.JSONRPC_VERSION)
-					So(resp.Error.Message, ShouldEqual, "missing required parameter: dataverse")
+					So(response, ShouldBeJSONRPCErrorWithText, "missing required parameter: dataverse")
 				},
 			},
 		}
