@@ -8,7 +8,7 @@ require (
 	github.com/axone-protocol/axone-contract-schema/go/dataverse-schema/v6 v6.0.0-20250411103805-21486d26bb1e
 	github.com/axone-protocol/axone-contract-schema/go/law-stone-schema/v6 v6.0.0-20250411103805-21486d26bb1e
 	github.com/justinas/alice v1.2.0
-	github.com/mark3labs/mcp-go v0.27.1
+	github.com/mark3labs/mcp-go v0.28.0
 	github.com/mattn/go-isatty v0.0.20
 	github.com/rs/zerolog v1.34.0
 	github.com/samber/lo v1.50.0
