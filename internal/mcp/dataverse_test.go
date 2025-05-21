@@ -15,6 +15,8 @@ import (
 )
 
 func TestDataverseJSONRCPMessageHandling(t *testing.T) {
+	requestId := mcp.NewRequestId("42")
+
 	Convey("Testing governance JSON-RPC message handling", t, func() {
 		tests := []struct {
 			name     string
@@ -26,7 +28,7 @@ func TestDataverseJSONRCPMessageHandling(t *testing.T) {
 				name: "get_dataverse_info tool",
 				message: mcp.JSONRPCRequest{
 					JSONRPC: mcp.JSONRPC_VERSION,
-					ID:      42,
+					ID:      requestId,
 					Request: mcp.Request{
 						Method: "tools/call",
 					},
@@ -51,7 +53,7 @@ func TestDataverseJSONRCPMessageHandling(t *testing.T) {
 				name: "get_dataverse_info tool - err1",
 				message: mcp.JSONRPCRequest{
 					JSONRPC: mcp.JSONRPC_VERSION,
-					ID:      42,
+					ID:      requestId,
 					Request: mcp.Request{
 						Method: "tools/call",
 					},
@@ -76,7 +78,7 @@ func TestDataverseJSONRCPMessageHandling(t *testing.T) {
 				name: "get_dataverse_info tool - missing arg",
 				message: mcp.JSONRPCRequest{
 					JSONRPC: mcp.JSONRPC_VERSION,
-					ID:      42,
+					ID:      requestId,
 					Request: mcp.Request{
 						Method: "tools/call",
 					},
@@ -85,7 +87,7 @@ func TestDataverseJSONRCPMessageHandling(t *testing.T) {
 					},
 				},
 				validate: func(response mcp.JSONRPCMessage) {
-					So(response, ShouldBeJSONRPCErrorWithText, "missing required parameter: dataverse")
+					So(response, ShouldBeJSONRPCErrorWithText, `required argument "dataverse" not found`)
 				},
 			},
 		}
