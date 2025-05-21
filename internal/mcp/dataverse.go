@@ -26,7 +26,7 @@ func getDataverse(cc grpc.ClientConnInterface) server.ServerTool {
 			mcp.Description("The address of the dataverse contract")),
 	)
 	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		dataverseAddress, err := requiredParam[string](request, dataverseAddressParam)
+		dataverseAddress, err := request.RequireString(dataverseAddressParam)
 		if err != nil {
 			return nil, err
 		}

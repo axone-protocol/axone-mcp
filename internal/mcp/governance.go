@@ -33,12 +33,12 @@ func getGovernanceCode(cc grpc.ClientConnInterface) server.ServerTool {
 			mcp.Description("The DID URI of the resource")),
 	)
 	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		dataverseAddress, err := requiredParam[string](request, dataverseAddressParam)
+		dataverseAddress, err := request.RequireString(dataverseAddressParam)
 		if err != nil {
 			return nil, err
 		}
 
-		resourceDID, err := requiredParam[string](request, resourceParam)
+		resourceDID, err := request.RequireString(resourceParam)
 		if err != nil {
 			return nil, err
 		}
