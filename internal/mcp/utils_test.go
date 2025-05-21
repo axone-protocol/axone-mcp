@@ -11,6 +11,8 @@ const (
 	success = ""
 )
 
+var requestId = mcp.NewRequestId("42")
+
 // ShouldBeJSONRPCResponseSuccessWithText validates the result of a tool call in a
 // JSON-RPC response.
 func ShouldBeJSONRPCResponseSuccessWithText(actual any, expected ...any) string {
@@ -80,7 +82,7 @@ func ShouldBeJSONRPCErrorWithText(actual any, expected ...any) string {
 	}
 
 	response := actual.(mcp.JSONRPCError)
-	if fail := ShouldEqual(response.ID, 42); fail != "" {
+	if fail := ShouldResemble(response.ID, requestId); fail != "" {
 		return fmt.Sprintf("ID: %s", fail)
 	}
 
@@ -96,7 +98,7 @@ func ShouldBeJSONRPCErrorWithText(actual any, expected ...any) string {
 }
 
 func shouldBeToolResultText(response mcp.JSONRPCResponse, isError bool, expectedContentText string) string {
-	if fail := ShouldEqual(response.ID, 42); fail != "" {
+	if fail := ShouldResemble(response.ID, requestId); fail != "" {
 		return fmt.Sprintf("ID: %s", fail)
 	}
 

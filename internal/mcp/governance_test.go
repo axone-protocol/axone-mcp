@@ -16,6 +16,8 @@ import (
 )
 
 func TestGovernanceJSONRCPMessageHandling(t *testing.T) {
+	requestId := mcp.NewRequestId("42")
+
 	Convey("Testing governance JSON-RPC message handling", t, func() {
 		const selectQuery = `{"select":{"query":{"limit":1,"prefixes":[{"namespace":"https://w3id.org/axone/ontology/v4/schema/credential/governance/text/","prefix":"gov"}],"select":[{"variable":"code"}],"where":{"bgp":{"patterns":[{"object":{"node":{"named_node":{"full":"did:key:zQ3shTd79aJSfrNpMVpUVX1xrG9gabc6fmYJS4gFuwUnjKK3F"}}},"predicate":{"named_node":{"full":"dataverse:credential:body#subject"}},"subject":{"variable":"credId"}},{"object":{"node":{"named_node":{"prefixed":"gov:GovernanceTextCredential"}}},"predicate":{"named_node":{"full":"dataverse:credential:body#type"}},"subject":{"variable":"credId"}},{"object":{"variable":"claim"},"predicate":{"named_node":{"full":"dataverse:credential:body#claim"}},"subject":{"variable":"credId"}},{"object":{"variable":"gov"},"predicate":{"named_node":{"prefixed":"gov:isGovernedBy"}},"subject":{"variable":"claim"}},{"object":{"variable":"code"},"predicate":{"named_node":{"prefixed":"gov:fromGovernance"}},"subject":{"variable":"gov"}}]}}}}}`
 		tests := []struct {
@@ -28,7 +30,7 @@ func TestGovernanceJSONRCPMessageHandling(t *testing.T) {
 				name: "get_resource_governance_code tool",
 				message: mcp.JSONRPCRequest{
 					JSONRPC: mcp.JSONRPC_VERSION,
-					ID:      42,
+					ID:      requestId,
 					Request: mcp.Request{
 						Method: "tools/call",
 					},
@@ -64,7 +66,7 @@ func TestGovernanceJSONRCPMessageHandling(t *testing.T) {
 				name: "get_resource_governance_code tool - err1",
 				message: mcp.JSONRPCRequest{
 					JSONRPC: mcp.JSONRPC_VERSION,
-					ID:      42,
+					ID:      requestId,
 					Request: mcp.Request{
 						Method: "tools/call",
 					},
@@ -90,7 +92,7 @@ func TestGovernanceJSONRCPMessageHandling(t *testing.T) {
 				name: "get_resource_governance_code tool - err2",
 				message: mcp.JSONRPCRequest{
 					JSONRPC: mcp.JSONRPC_VERSION,
-					ID:      42,
+					ID:      requestId,
 					Request: mcp.Request{
 						Method: "tools/call",
 					},
@@ -121,7 +123,7 @@ func TestGovernanceJSONRCPMessageHandling(t *testing.T) {
 				name: "get_resource_governance_code tool - err3",
 				message: mcp.JSONRPCRequest{
 					JSONRPC: mcp.JSONRPC_VERSION,
-					ID:      42,
+					ID:      requestId,
 					Request: mcp.Request{
 						Method: "tools/call",
 					},
@@ -157,7 +159,7 @@ func TestGovernanceJSONRCPMessageHandling(t *testing.T) {
 				name: "get_resource_governance_code tool - err4",
 				message: mcp.JSONRPCRequest{
 					JSONRPC: mcp.JSONRPC_VERSION,
-					ID:      42,
+					ID:      requestId,
 					Request: mcp.Request{
 						Method: "tools/call",
 					},
@@ -193,7 +195,7 @@ func TestGovernanceJSONRCPMessageHandling(t *testing.T) {
 				name: "get_resource_governance_code tool - err5",
 				message: mcp.JSONRPCRequest{
 					JSONRPC: mcp.JSONRPC_VERSION,
-					ID:      42,
+					ID:      requestId,
 					Request: mcp.Request{
 						Method: "tools/call",
 					},
@@ -219,7 +221,7 @@ func TestGovernanceJSONRCPMessageHandling(t *testing.T) {
 				name: "get_resource_governance_code tool - missing arg (1)",
 				message: mcp.JSONRPCRequest{
 					JSONRPC: mcp.JSONRPC_VERSION,
-					ID:      42,
+					ID:      requestId,
 					Request: mcp.Request{
 						Method: "tools/call",
 					},
@@ -231,14 +233,14 @@ func TestGovernanceJSONRCPMessageHandling(t *testing.T) {
 					},
 				},
 				validate: func(response mcp.JSONRPCMessage) {
-					So(response, ShouldBeJSONRPCErrorWithText, "missing required parameter: resource")
+					So(response, ShouldBeJSONRPCErrorWithText, `required argument "resource" not found`)
 				},
 			},
 			{
 				name: "get_resource_governance_code tool - missing arg (2)",
 				message: mcp.JSONRPCRequest{
 					JSONRPC: mcp.JSONRPC_VERSION,
-					ID:      42,
+					ID:      requestId,
 					Request: mcp.Request{
 						Method: "tools/call",
 					},
@@ -250,7 +252,7 @@ func TestGovernanceJSONRCPMessageHandling(t *testing.T) {
 					},
 				},
 				validate: func(response mcp.JSONRPCMessage) {
-					So(response, ShouldBeJSONRPCErrorWithText, "missing required parameter: dataverse")
+					So(response, ShouldBeJSONRPCErrorWithText, `required argument "dataverse" not found`)
 				},
 			},
 		}

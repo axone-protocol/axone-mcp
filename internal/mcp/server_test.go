@@ -20,6 +20,8 @@ import (
 )
 
 func TestJSONRCPMessageHandling(t *testing.T) {
+	requestId := mcp.NewRequestId("42")
+
 	readWriteFooToolFactory := func(_ grpc.ClientConnInterface) server.ServerTool {
 		return server.ServerTool{
 			Tool: mcp.NewTool("read_write_foo",
@@ -46,7 +48,7 @@ func TestJSONRCPMessageHandling(t *testing.T) {
 				name: "Ping",
 				message: mcp.JSONRPCRequest{
 					JSONRPC: mcp.JSONRPC_VERSION,
-					ID:      42,
+					ID:      requestId,
 					Request: mcp.Request{
 						Method: "ping",
 					},
@@ -55,7 +57,7 @@ func TestJSONRCPMessageHandling(t *testing.T) {
 					So(response, ShouldNotBeNil)
 					resp, ok := response.(mcp.JSONRPCResponse)
 					So(ok, ShouldBeTrue)
-					So(resp.ID, ShouldEqual, 42)
+					So(resp.ID, ShouldEqual, requestId)
 					So(resp.JSONRPC, ShouldEqual, mcp.JSONRPC_VERSION)
 					_, ok = resp.Result.(mcp.EmptyResult)
 					So(ok, ShouldBeTrue)
@@ -65,7 +67,7 @@ func TestJSONRCPMessageHandling(t *testing.T) {
 				name: "Tools list",
 				message: mcp.JSONRPCRequest{
 					JSONRPC: mcp.JSONRPC_VERSION,
-					ID:      42,
+					ID:      requestId,
 					Request: mcp.Request{
 						Method: "tools/list",
 					},
@@ -77,7 +79,7 @@ func TestJSONRCPMessageHandling(t *testing.T) {
 					So(response, ShouldNotBeNil)
 					resp, ok := response.(mcp.JSONRPCResponse)
 					So(ok, ShouldBeTrue)
-					So(resp.ID, ShouldEqual, 42)
+					So(resp.ID, ShouldEqual, requestId)
 					So(resp.JSONRPC, ShouldEqual, mcp.JSONRPC_VERSION)
 					ctr, ok := resp.Result.(mcp.ListToolsResult)
 					So(ok, ShouldBeTrue)
@@ -92,7 +94,7 @@ func TestJSONRCPMessageHandling(t *testing.T) {
 				name: "ReadWriteFoo",
 				message: mcp.JSONRPCRequest{
 					JSONRPC: mcp.JSONRPC_VERSION,
-					ID:      42,
+					ID:      requestId,
 					Request: mcp.Request{
 						Method: "tools/call",
 					},
@@ -107,7 +109,7 @@ func TestJSONRCPMessageHandling(t *testing.T) {
 					So(response, ShouldNotBeNil)
 					resp, ok := response.(mcp.JSONRPCResponse)
 					So(ok, ShouldBeTrue)
-					So(resp.ID, ShouldEqual, 42)
+					So(resp.ID, ShouldEqual, requestId)
 					So(resp.JSONRPC, ShouldEqual, mcp.JSONRPC_VERSION)
 					ctr, ok := resp.Result.(mcp.CallToolResult)
 					So(ok, ShouldBeTrue)
