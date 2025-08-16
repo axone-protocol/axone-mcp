@@ -1,5 +1,5 @@
 #--- Build stage
-FROM golang:1.24-bullseye AS go-builder
+FROM golang:1.25rc3-bullseye AS go-builder
 
 WORKDIR /src
 
