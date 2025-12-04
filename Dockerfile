@@ -8,7 +8,7 @@ COPY . /src/
 RUN make build CGO_ENABLED=0
 
 #--- Image stage
-FROM alpine:3.22.2
+FROM alpine:3.23.0
 
 COPY --from=go-builder /src/target/axone-mcp /usr/bin/axone-mcp
 
