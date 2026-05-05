@@ -9,7 +9,7 @@ require (
 	github.com/axone-protocol/axone-contract-schema/go/law-stone-schema/v6 v6.0.0-20250411103805-21486d26bb1e
 	github.com/justinas/alice v1.2.0
 	github.com/mark3labs/mcp-go v0.32.0
-	github.com/mattn/go-isatty v0.0.20
+	github.com/mattn/go-isatty v0.0.22
 	github.com/rs/zerolog v1.34.0
 	github.com/samber/lo v1.51.0
 	github.com/smartystreets/goconvey v1.8.1
