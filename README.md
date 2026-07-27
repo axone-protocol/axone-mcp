@@ -40,13 +40,27 @@ flowchart LR
     mcpServer:::system@{ shape: rounded, label: "Axone<br>MCP server" }
     axone:::system@{ shape: das, label: "🔗 Axone chain" }
 
-
     actor -- query --> mcpServer
 
     mcpServer -. query .-> axone
 ```
 
 ## Available tools
+
+### `get_dataverse_info`
+
+Get information about the given dataverse.
+
+#### Input schema
+
+```json
+{
+  "dataverse": {
+    "type": "string",
+    "description": "The address of the dataverse contract"
+  }
+}
+```
 
 ### `get_resource_governance_code`
 
